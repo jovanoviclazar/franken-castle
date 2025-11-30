@@ -38,35 +38,37 @@ private:
 
     void update() override;
 
+    static void update_camera();
+
     void begin_draw() override;
 
     void draw() override;
 
     void end_draw() override;
 
-    void update_camera();
+    void draw_skybox();
 
     void draw_floor();
-
-    void draw_tree();
-
-    void draw_castle();
-
-    void draw_grass();
-
-    void draw_bridge();
-
-    void draw_plank();
-
-    void draw_skybox();
 
     void draw_water();
 
     void draw_alligator();
 
+    void draw_grass();
+
+    void draw_tree();
+
+    void draw_castle();
+
+    void draw_plank();
+
+    void draw_bridge();
+
     void draw_mystery_machine();
 
     glm::mat4 get_model_matrix(ModelParams par);
+
+    void set_light(const resources::Shader *shader) const;
 
     ModelParams m_floor{{0.0f, 0.0f, 0.0f}, {0.1f, 0.1f, 0.1f}};
     ModelParams m_castle{{1.5f, -0.6f, 0.0f}, {0.12f, 0.12f, 0.12f}};

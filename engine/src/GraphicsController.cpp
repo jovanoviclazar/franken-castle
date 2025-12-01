@@ -103,7 +103,7 @@ void GraphicsController::initialize() {
     CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, m_ssao_blur_fbo);
     CHECKED_GL_CALL(glGenTextures, 1, &m_ssao_color_buffer_blur);
     CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_ssao_color_buffer_blur);
-    CHECKED_GL_CALL(glTexImage2D, GL_TEXTURE_2D, 0, GL_RED, platform->window()->width(), platform->window()->height(), 0, GL_RED, GL_FLOAT, NULL);
+    CHECKED_GL_CALL(glTexImage2D, GL_TEXTURE_2D, 0, GL_RED, platform->window()->width(), platform->window()->height(), 0, GL_RED, GL_FLOAT, (void *) 0);
     CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_ssao_color_buffer_blur, 0);

@@ -100,15 +100,15 @@ void GraphicsController::initialize() {
     CHECKED_GL_CALL(glFramebufferTexture2D, GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_ssao_color_buffer, 0);
     RG_GUARANTEE(CHECKED_GL_CALL(glCheckFramebufferStatus, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "SSAO Framebuffer not complete!");
 
-    glBindFramebuffer(GL_FRAMEBUFFER, m_ssao_blur_fbo);
-    glGenTextures(1, &m_ssao_color_buffer_blur);
-    glBindTexture(GL_TEXTURE_2D, m_ssao_color_buffer_blur);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, platform->window()->width(), platform->window()->height(), 0, GL_RED, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, m_ssao_blur_fbo);
+    CHECKED_GL_CALL(glGenTextures, 1, &m_ssao_color_buffer_blur);
+    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_ssao_color_buffer_blur);
+    CHECKED_GL_CALL(glTexImage2D, GL_TEXTURE_2D, 0, GL_RED, platform->window()->width(), platform->window()->height(), 0, GL_RED, GL_FLOAT, NULL);
+    CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_ssao_color_buffer_blur, 0);
     RG_GUARANTEE(CHECKED_GL_CALL(glCheckFramebufferStatus, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "SSAO Blur Framebuffer not complete!");
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, 0);
 
     std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
     std::default_random_engine generator;

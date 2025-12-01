@@ -153,6 +153,12 @@ public:
         return m_ortho_params;
     }
 
+    void bind_g_frame_buffer();
+
+    void draw_ssao(const resources::Shader *shader);
+    void draw_ssao_blur(const resources::Shader *shader);
+    void draw_ssao_light(const resources::Shader *shader, bool spotlight);
+
 private:
     /**
     * @brief Initializes OpenGL, ImGUI, and projection matrix params;
@@ -167,6 +173,20 @@ private:
     glm::mat4 m_projection_matrix{};
     Camera m_camera{};
     ImGuiContext *m_imgui_context{};
+    unsigned int m_quad_vao{};
+    unsigned int m_quad_vbo{};
+    unsigned int m_g_buffer{};
+    unsigned int m_g_position{};
+    unsigned int m_g_normal{};
+    unsigned int m_g_albedo{};
+    unsigned int m_rbo_depth{};
+    unsigned int m_ssao_fbo{};
+    unsigned int m_ssao_color_buffer{};
+    unsigned int m_noise_texture{};
+    unsigned int m_ssao_blur_fbo{};
+    unsigned int m_ssao_color_buffer_blur{};
+    std::vector<glm::vec3> m_ssao_kernel;
+    std::vector<glm::vec3> m_ssao_noise;
 };
 
 /**

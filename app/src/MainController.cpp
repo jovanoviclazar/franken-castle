@@ -159,6 +159,8 @@ void MainController::begin_draw() {
 }
 
 void MainController::draw() {
+    engine::core::Controller::get<engine::graphics::GraphicsController>()->bind_g_frame_buffer();
+    engine::graphics::OpenGL::clear_buffers();
     draw_skybox();
     draw_floor();
     draw_water();
@@ -169,7 +171,14 @@ void MainController::draw() {
     draw_plank();
     draw_bridge();
     draw_mystery_machine();
+    auto shader1 = engine::core::Controller::get<engine::resources::ResourcesController>()->shader("ssao");
+    engine::core::Controller::get<engine::graphics::GraphicsController>()->draw_ssao(shader1);
+    auto shader2 = engine::core::Controller::get<engine::resources::ResourcesController>()->shader("ssao_blur");
+    engine::core::Controller::get<engine::graphics::GraphicsController>()->draw_ssao_blur(shader2);
+    auto shader3 = engine::core::Controller::get<engine::resources::ResourcesController>()->shader("ssao_light");
+    engine::core::Controller::get<engine::graphics::GraphicsController>()->draw_ssao_light(shader3, m_spotlight_enabled);
 }
+
 
 void MainController::end_draw() {
     engine::core::Controller::get<engine::platform::PlatformController>()->swap_buffers();
@@ -189,7 +198,7 @@ void MainController::draw_floor() {
     shader->set_mat4("projection", graphics->projection_matrix());
     shader->set_mat4("view", graphics->camera()->view_matrix());
     shader->set_mat4("model", get_model_matrix(m_floor));
-    set_light(shader);
+    // set_light(shader);
     floor->draw(shader);
 }
 
@@ -202,7 +211,7 @@ void MainController::draw_water() {
     shader->set_mat4("projection", graphics->projection_matrix());
     shader->set_mat4("view", graphics->camera()->view_matrix());
     shader->set_mat4("model", get_model_matrix(m_water));
-    set_light(shader);
+    // set_light(shader);
     water->draw(shader);
 }
 
@@ -215,7 +224,7 @@ void MainController::draw_alligator() {
     shader->set_mat4("projection", graphics->projection_matrix());
     shader->set_mat4("view", graphics->camera()->view_matrix());
     shader->set_mat4("model", get_model_matrix(m_alligator));
-    set_light(shader);
+    // set_light(shader);
     alligator->draw(shader);
 }
 
@@ -226,7 +235,7 @@ void MainController::draw_grass() {
     shader->use();
     shader->set_mat4("projection", graphics->projection_matrix());
     shader->set_mat4("view", graphics->camera()->view_matrix());
-    set_light(shader);
+    // set_light(shader);
     grass->draw_instancing(shader, m_grass.size());
 }
 
@@ -237,7 +246,7 @@ void MainController::draw_tree() {
     shader->use();
     shader->set_mat4("projection", graphics->projection_matrix());
     shader->set_mat4("view", graphics->camera()->view_matrix());
-    set_light(shader);
+    // set_light(shader);
     pine_tree->draw_instancing(shader, m_trees.size());
 }
 
@@ -249,7 +258,7 @@ void MainController::draw_castle() {
     shader->set_mat4("projection", graphics->projection_matrix());
     shader->set_mat4("view", graphics->camera()->view_matrix());
     shader->set_mat4("model", get_model_matrix(m_castle));
-    set_light(shader);
+    // set_light(shader);
     castle->draw(shader);
 }
 
@@ -261,7 +270,7 @@ void MainController::draw_plank() {
     shader->set_mat4("projection", graphics->projection_matrix());
     shader->set_mat4("view", graphics->camera()->view_matrix());
     shader->set_mat4("model", get_model_matrix(m_plank));
-    set_light(shader);
+    // set_light(shader);
     plank->draw(shader);
 }
 
@@ -273,7 +282,7 @@ void MainController::draw_bridge() {
     shader->set_mat4("projection", graphics->projection_matrix());
     shader->set_mat4("view", graphics->camera()->view_matrix());
     shader->set_mat4("model", rotate(get_model_matrix(m_bridge), glm::radians(m_bridge_radius), m_bridge_vec));
-    set_light(shader);
+    // set_light(shader);
     bridge->draw(shader);
 }
 
@@ -285,7 +294,7 @@ void MainController::draw_mystery_machine() {
     shader->set_mat4("projection", graphics->projection_matrix());
     shader->set_mat4("view", graphics->camera()->view_matrix());
     shader->set_mat4("model", get_model_matrix(m_mystery_machine));
-    set_light(shader);
+    // set_light(shader);
     mystery_machine->draw(shader);
 }
 

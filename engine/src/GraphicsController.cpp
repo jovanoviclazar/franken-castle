@@ -216,7 +216,7 @@ void GraphicsController::draw_ssao_light(const resources::Shader *shader, bool s
     shader->set_int("ssao", 3);
     shader->set_vec3("dirLight.direction", glm::vec3(1.0f, -1.0f, 1.0f));
     shader->set_vec3("dirLight.ambient", glm::vec3(0.05f, 0.05f, 0.05f));
-    shader->set_vec3("dirLight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
+    shader->set_vec3("dirLight.diffuse", glm::vec3(0.2f, 0.2f, 0.2f));
     shader->set_vec3("dirLight.specular", glm::vec3(0.5f, 0.5f, 0.5f));
     shader->set_vec3("spotLight.position", camera()->Position);
     shader->set_vec3("spotLight.direction", camera()->Front);

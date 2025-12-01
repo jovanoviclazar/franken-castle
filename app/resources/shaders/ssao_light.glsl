@@ -65,7 +65,7 @@ void main() {
     result += CalcSpotLight(spotLight, Normal, FragPos, viewDir);
 
     vec3 ambient = dirLight.ambient * vec3(texture(gAlbedo, TexCoords));
-    ambient *= AmbientOcclusion;
+    ambient *= 0.3 * AmbientOcclusion;
 
     result += ambient;
     FragColor = vec4(result, 1.0);

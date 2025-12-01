@@ -16,6 +16,7 @@ void main()
 #version 330 core
 
 layout (location = 0) out vec4 FragColor;
+layout (location = 1) out vec4 BrightColor;
 
 in vec3 Normal;
 in vec3 FragPos;
@@ -64,10 +65,11 @@ void main() {
     result += CalcDirLight(dirLight, Normal, viewDir);
     result += CalcSpotLight(spotLight, Normal, FragPos, viewDir);
 
-    vec3 ambient = dirLight.ambient * vec3(texture(gAlbedo, TexCoords));
+    vec3 ambient = dirLight.ambient;
     ambient *= 0.3 * AmbientOcclusion;
 
     result += ambient;
+    result *= Diffuse;
     FragColor = vec4(result, 1.0);
 }
 

@@ -17,14 +17,14 @@ ESC -> CLOSE
 
 ### Fundamental:
 
-[ ] Model with lighting  
-[ ] Two types of lighting with customizable colors and movement through GUI or ACTIONS  
+[x] Model with lighting  
+[x] Two types of lighting with customizable colors and movement through GUI or ACTIONS  
 [ ] {ACTION_X} --- AFTER_M_SECONDS---Triggers---> {EVENT_A} ---> AFTER_N_SECONDS---Triggers---> {EVENT_B}
 
 ### Group A:
 
 [ ] Frame-buffers with post-processing   
-[ ] Off-screen Anti-Aliasing  
+[x] Off-screen Anti-Aliasing  
 [ ] Parallax Mapping
 [ ] Bloom with the use of HDR
 
@@ -32,11 +32,7 @@ ESC -> CLOSE
 
 [ ] Deferred Shading  
 [ ] Point Shadows  
-[ ] SSAO
-
-### Engine improvement:
-
-[ ] ...
+[x] SSAO
 
 ## Models:
 

@@ -161,7 +161,7 @@ void MainController::begin_draw() {
 void MainController::draw() {
     engine::core::Controller::get<engine::graphics::GraphicsController>()->bind_g_frame_buffer();
     engine::graphics::OpenGL::clear_buffers();
-    draw_skybox();
+    // draw_skybox();
     draw_floor();
     draw_water();
     draw_alligator();

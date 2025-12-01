@@ -155,7 +155,7 @@ public:
 
     void bind_g_frame_buffer();
 
-    void draw_ssao(const resources::Shader *shader);
+    void draw_ssao(const resources::Shader *shader1, const resources::Shader *shader2, const resources::Shader *shader3);
     void draw_ssao_blur(const resources::Shader *shader);
     void draw_ssao_light(const resources::Shader *shader, bool spotlight);
 

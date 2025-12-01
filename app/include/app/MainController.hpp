@@ -66,6 +66,8 @@ private:
 
     void draw_mystery_machine();
 
+    void draw_ssao();
+
     glm::mat4 get_model_matrix(ModelParams par);
 
     void set_light(const resources::Shader *shader) const;

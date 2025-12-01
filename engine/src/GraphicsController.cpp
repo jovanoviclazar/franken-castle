@@ -172,7 +172,7 @@ void GraphicsController::end_gui() {
 }
 
 void GraphicsController::draw_ssao(const resources::Shader *shader) {
-    glBindFramebuffer(GL_FRAMEBUFFER, m_ssao_fbo);
+    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, m_ssao_fbo);
     engine::graphics::OpenGL::clear_buffers();
     shader->use();
     shader->set_int("gPosition", 0);
@@ -182,29 +182,29 @@ void GraphicsController::draw_ssao(const resources::Shader *shader) {
         shader->set_vec3("samples[" + std::to_string(i) + "]", m_ssao_kernel[i]);
     }
     shader->set_mat4("projection", projection_matrix());
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_g_position);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, m_g_normal);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, m_noise_texture);
-    glBindVertexArray(m_quad_vao);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glBindVertexArray(0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    CHECKED_GL_CALL(glActiveTexture, GL_TEXTURE0);
+    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_g_position);
+    CHECKED_GL_CALL(glActiveTexture, GL_TEXTURE1);
+    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_g_normal);
+    CHECKED_GL_CALL(glActiveTexture, GL_TEXTURE2);
+    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_noise_texture);
+    CHECKED_GL_CALL(glBindVertexArray, m_quad_vao);
+    CHECKED_GL_CALL(glDrawArrays, GL_TRIANGLE_STRIP, 0, 4);
+    CHECKED_GL_CALL(glBindVertexArray, 0);
+    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, 0);
 }
 
 void GraphicsController::draw_ssao_blur(const resources::Shader *shader) {
-    glBindFramebuffer(GL_FRAMEBUFFER, m_ssao_blur_fbo);
+    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, m_ssao_blur_fbo);
     engine::graphics::OpenGL::clear_buffers();
     shader->use();
     shader->set_int("ssaoInput", 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_ssao_color_buffer);
-    glBindVertexArray(m_quad_vao);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glBindVertexArray(0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    CHECKED_GL_CALL(glActiveTexture, GL_TEXTURE0);
+    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_ssao_color_buffer);
+    CHECKED_GL_CALL(glBindVertexArray, m_quad_vao);
+    CHECKED_GL_CALL(glDrawArrays, GL_TRIANGLE_STRIP, 0, 4);
+    CHECKED_GL_CALL(glBindVertexArray, 0);
+    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, 0);
 }
 
 void GraphicsController::draw_ssao_light(const resources::Shader *shader, bool spotlight) {
@@ -228,17 +228,17 @@ void GraphicsController::draw_ssao_light(const resources::Shader *shader, bool s
     shader->set_float("spotLight.quadratic", 0.032f);
     shader->set_float("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
     shader->set_float("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_g_position);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, m_g_normal);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, m_g_albedo);
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, m_ssao_color_buffer_blur);
-    glBindVertexArray(m_quad_vao);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glBindVertexArray(0);
+    CHECKED_GL_CALL(glActiveTexture, GL_TEXTURE0);
+    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_g_position);
+    CHECKED_GL_CALL(glActiveTexture, GL_TEXTURE1);
+    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_g_normal);
+    CHECKED_GL_CALL(glActiveTexture, GL_TEXTURE2);
+    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_g_albedo);
+    CHECKED_GL_CALL(glActiveTexture, GL_TEXTURE3);
+    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_ssao_color_buffer_blur);
+    CHECKED_GL_CALL(glBindVertexArray, m_quad_vao);
+    CHECKED_GL_CALL(glDrawArrays, GL_TRIANGLE_STRIP, 0, 4);
+    CHECKED_GL_CALL(glBindVertexArray, 0);
 }
 
 void GraphicsController::draw_skybox(const resources::Shader *shader, const resources::Skybox *skybox) {

@@ -159,7 +159,8 @@ void MainController::begin_draw() {
 }
 
 void MainController::draw() {
-    engine::core::Controller::get<engine::graphics::GraphicsController>()->bind_g_frame_buffer();
+    auto g_buffer = engine::core::Controller::get<engine::resources::ResourcesController>()->framebuffer("g_buffer");
+    g_buffer->bind();
     engine::graphics::OpenGL::clear_buffers();
     // draw_skybox();
     draw_floor();
@@ -171,6 +172,7 @@ void MainController::draw() {
     draw_plank();
     draw_bridge();
     draw_mystery_machine();
+    g_buffer->unbind();
     draw_ssao();
 }
 

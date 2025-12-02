@@ -6,6 +6,7 @@
 #include <engine/graphics/GraphicsController.hpp>
 #include <engine/graphics/OpenGL.hpp>
 #include <engine/platform/PlatformController.hpp>
+#include <engine/resources/ResourcesController.hpp>
 #include <engine/resources/Skybox.hpp>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
@@ -19,6 +20,7 @@ void GraphicsController::initialize() {
     RG_GUARANTEE(opengl_initialized, "OpenGL failed to init!");
 
     auto platform = engine::core::Controller::get<platform::PlatformController>();
+    auto resources = engine::core::Controller::get<resources::ResourcesController>();
     auto handle = platform->window()->handle_();
     m_perspective_params.FOV = glm::radians(m_camera.Zoom);
     m_perspective_params.Width = static_cast<float>(platform->window()->width());
@@ -57,58 +59,23 @@ void GraphicsController::initialize() {
     CHECKED_GL_CALL(glEnableVertexAttribArray, 1);
     CHECKED_GL_CALL(glVertexAttribPointer, 1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
 
-    CHECKED_GL_CALL(glGenFramebuffers, 1, &m_g_buffer);
-    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, m_g_buffer);
-    CHECKED_GL_CALL(glGenTextures, 1, &m_g_position);
-    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_g_position);
-    CHECKED_GL_CALL(glTexImage2D, GL_TEXTURE_2D, 0, GL_RGBA16F, platform->window()->width(), platform->window()->height(), 0, GL_RGBA, GL_FLOAT, (void *) 0);
-    CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    CHECKED_GL_CALL(glFramebufferTexture2D, GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_g_position, 0);
-    CHECKED_GL_CALL(glGenTextures, 1, &m_g_normal);
-    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_g_normal);
-    CHECKED_GL_CALL(glTexImage2D, GL_TEXTURE_2D, 0, GL_RGBA16F, platform->window()->width(), platform->window()->height(), 0, GL_RGBA, GL_FLOAT, (void *) 0);
-    CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    CHECKED_GL_CALL(glFramebufferTexture2D, GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, m_g_normal, 0);
-    CHECKED_GL_CALL(glGenTextures, 1, &m_g_albedo);
-    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_g_albedo);
-    CHECKED_GL_CALL(glTexImage2D, GL_TEXTURE_2D, 0, GL_RGBA, platform->window()->width(), platform->window()->height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, (void *) 0);
-    CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    CHECKED_GL_CALL(glFramebufferTexture2D, GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, m_g_albedo, 0);
+    auto g_buffer = resources->framebuffer("g_buffer");
+    g_buffer->generate_texture("g_position", GL_COLOR_ATTACHMENT0, platform->window()->width(), platform->window()->height(), GL_RGBA16F, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+    g_buffer->generate_texture("g_normal", GL_COLOR_ATTACHMENT1, platform->window()->width(), platform->window()->height(), GL_RGBA16F, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_NEAREST, 0, 0);
+    g_buffer->generate_texture("g_albedo", GL_COLOR_ATTACHMENT2, platform->window()->width(), platform->window()->height(), GL_RGBA, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_NEAREST, 0, 0);
     unsigned int attachments[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
-    CHECKED_GL_CALL(glDrawBuffers, 3, attachments);
-    CHECKED_GL_CALL(glGenRenderbuffers, 1, &m_rbo_depth);
-    CHECKED_GL_CALL(glBindRenderbuffer, GL_RENDERBUFFER, m_rbo_depth);
-    CHECKED_GL_CALL(glRenderbufferStorage, GL_RENDERBUFFER, GL_DEPTH_COMPONENT, platform->window()->width(), platform->window()->height());
-    CHECKED_GL_CALL(glFramebufferRenderbuffer, GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rbo_depth);
-    RG_GUARANTEE(CHECKED_GL_CALL(glCheckFramebufferStatus, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not complete!");
-    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, 0);
+    g_buffer->draw_buffers(attachments, 3);
+    g_buffer->generate_renderbuffer(platform->window()->width(), platform->window()->height());
+    g_buffer->check_status();
 
-    CHECKED_GL_CALL(glGenFramebuffers, 1, &m_ssao_fbo);
-    CHECKED_GL_CALL(glGenFramebuffers, 1, &m_ssao_blur_fbo);
-    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, m_ssao_fbo);
+    auto ssao_fbo = resources->framebuffer("ssao_fbo");
+    auto ssao_blur_fbo = resources->framebuffer("ssao_blur_fbo");
 
-    CHECKED_GL_CALL(glGenTextures, 1, &m_ssao_color_buffer);
-    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_ssao_color_buffer);
-    CHECKED_GL_CALL(glTexImage2D, GL_TEXTURE_2D, 0, GL_RED, platform->window()->width(), platform->window()->height(), 0, GL_RED, GL_FLOAT, (void *) 0);
-    CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    CHECKED_GL_CALL(glFramebufferTexture2D, GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_ssao_color_buffer, 0);
-    RG_GUARANTEE(CHECKED_GL_CALL(glCheckFramebufferStatus, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "SSAO Framebuffer not complete!");
+    ssao_fbo->generate_texture("color_buffer", GL_COLOR_ATTACHMENT0, platform->window()->width(), platform->window()->height(), GL_RED, GL_RED, GL_FLOAT, GL_NEAREST, GL_NEAREST, 0, 0);
+    ssao_fbo->check_status();
 
-    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, m_ssao_blur_fbo);
-    CHECKED_GL_CALL(glGenTextures, 1, &m_ssao_color_buffer_blur);
-    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_ssao_color_buffer_blur);
-    CHECKED_GL_CALL(glTexImage2D, GL_TEXTURE_2D, 0, GL_RED, platform->window()->width(), platform->window()->height(), 0, GL_RED, GL_FLOAT, (void *) 0);
-    CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_ssao_color_buffer_blur, 0);
-    RG_GUARANTEE(CHECKED_GL_CALL(glCheckFramebufferStatus, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "SSAO Blur Framebuffer not complete!");
-    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, 0);
+    ssao_blur_fbo->generate_texture("color_buffer", GL_COLOR_ATTACHMENT0, platform->window()->width(), platform->window()->height(), GL_RED, GL_RED, GL_FLOAT, GL_NEAREST, GL_NEAREST, 0, 0);
+    ssao_blur_fbo->check_status();
 
     std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
     std::default_random_engine generator;
@@ -134,10 +101,6 @@ void GraphicsController::initialize() {
     CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-}
-
-void GraphicsController::bind_g_frame_buffer() {
-    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, m_g_buffer);
 }
 
 void GraphicsController::terminate() {
@@ -172,7 +135,10 @@ void GraphicsController::end_gui() {
 }
 
 void GraphicsController::draw_ssao(const resources::Shader *ssao_shader, const resources::Shader *blur_shader, const resources::Shader *light_shader) {
-    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, m_ssao_fbo);
+    auto resources = engine::core::Controller::get<resources::ResourcesController>();
+    auto g_buffer = resources->framebuffer("g_buffer");
+    auto ssao_fbo = resources->framebuffer("ssao_fbo");
+    ssao_fbo->bind();
     engine::graphics::OpenGL::clear_buffers();
     ssao_shader->use();
     ssao_shader->set_int("gPosition", 0);
@@ -182,40 +148,36 @@ void GraphicsController::draw_ssao(const resources::Shader *ssao_shader, const r
         ssao_shader->set_vec3("samples[" + std::to_string(i) + "]", m_ssao_kernel[i]);
     }
     ssao_shader->set_mat4("projection", projection_matrix());
-    CHECKED_GL_CALL(glActiveTexture, GL_TEXTURE0);
-    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_g_position);
-    CHECKED_GL_CALL(glActiveTexture, GL_TEXTURE1);
-    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_g_normal);
+    g_buffer->bind_texture("g_position", GL_TEXTURE0);
+    g_buffer->bind_texture("g_normal", GL_TEXTURE1);
     CHECKED_GL_CALL(glActiveTexture, GL_TEXTURE2);
     CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_noise_texture);
     CHECKED_GL_CALL(glBindVertexArray, m_quad_vao);
     CHECKED_GL_CALL(glDrawArrays, GL_TRIANGLE_STRIP, 0, 4);
     CHECKED_GL_CALL(glBindVertexArray, 0);
-    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, 0);
-    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, m_ssao_blur_fbo);
+    ssao_fbo->unbind();
+
+    auto ssao_blur_fbo = resources->framebuffer("ssao_blur_fbo");
+    ssao_blur_fbo->bind();
     engine::graphics::OpenGL::clear_buffers();
     blur_shader->use();
     blur_shader->set_int("ssaoInput", 0);
-    CHECKED_GL_CALL(glActiveTexture, GL_TEXTURE0);
-    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_ssao_color_buffer);
+    ssao_fbo->bind_texture("color_buffer", GL_TEXTURE0);
     CHECKED_GL_CALL(glBindVertexArray, m_quad_vao);
     CHECKED_GL_CALL(glDrawArrays, GL_TRIANGLE_STRIP, 0, 4);
     CHECKED_GL_CALL(glBindVertexArray, 0);
-    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, 0);
+    ssao_blur_fbo->unbind();
+
     engine::graphics::OpenGL::clear_buffers();
     light_shader->use();
     light_shader->set_int("gPosition", 0);
     light_shader->set_int("gNormal", 1);
     light_shader->set_int("gAlbedo", 2);
     light_shader->set_int("ssao", 3);
-    CHECKED_GL_CALL(glActiveTexture, GL_TEXTURE0);
-    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_g_position);
-    CHECKED_GL_CALL(glActiveTexture, GL_TEXTURE1);
-    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_g_normal);
-    CHECKED_GL_CALL(glActiveTexture, GL_TEXTURE2);
-    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_g_albedo);
-    CHECKED_GL_CALL(glActiveTexture, GL_TEXTURE3);
-    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_ssao_color_buffer_blur);
+    g_buffer->bind_texture("g_position", GL_TEXTURE0);
+    g_buffer->bind_texture("g_normal", GL_TEXTURE1);
+    g_buffer->bind_texture("g_albedo", GL_TEXTURE2);
+    ssao_blur_fbo->bind_texture("color_buffer", GL_TEXTURE3);
     CHECKED_GL_CALL(glBindVertexArray, m_quad_vao);
     CHECKED_GL_CALL(glDrawArrays, GL_TRIANGLE_STRIP, 0, 4);
     CHECKED_GL_CALL(glBindVertexArray, 0);

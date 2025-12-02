@@ -7,6 +7,7 @@
 
 #include <filesystem>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 
 namespace engine::resources {
@@ -17,15 +18,25 @@ class Framebuffer {
 public:
     void destroy();
 
+    void bind();
+
+    void unbind();
+
+    void generate_texture(const std::string &name, unsigned int attachment, int width, int height,
+                          int internalFormat, unsigned int format, unsigned int type,
+                          unsigned int minFilter, unsigned int magFilter,
+                          unsigned int wrapS, unsigned int wrapT);
+
+    void draw_buffers(unsigned int attachments[], int num);
+
+    void generate_renderbuffer(int width, int height);
+
+    void check_status();
+
+    void bind_texture(const std::string &name, unsigned int tex);
+
 private:
-    Framebuffer() = default;
-    Framebuffer(std::string name, const unsigned int fbo, const unsigned int rbo, const unsigned int width, const unsigned int height, std::vector<unsigned int> color_buffer)
-        : m_fbo(fbo)
-        , m_rbo(rbo)
-        , m_name(std::move(name))
-        , m_width(width)
-        , m_height(height)
-        , m_color_buffers(std::move(color_buffer)) {}
+    Framebuffer();
 
     unsigned int m_fbo{};
     unsigned int m_rbo{};
@@ -33,7 +44,7 @@ private:
 
     unsigned int m_width{};
     unsigned int m_height{};
-    std::vector<unsigned int> m_color_buffers;
+    std::unordered_map<std::string, unsigned int> m_color_buffers;
 };
 }// namespace engine::resources
 #endif//FRAMEBUFFER_HPP

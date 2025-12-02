@@ -7,6 +7,7 @@
 #define MATF_RG_PROJECT_RESOURCES_CONTROLLER_HPP
 
 #include <engine/core/Controller.hpp>
+#include <engine/resources/Framebuffer.hpp>
 #include <engine/resources/Model.hpp>
 #include <engine/resources/Shader.hpp>
 #include <engine/resources/Skybox.hpp>
@@ -23,6 +24,8 @@ public:
     std::string_view name() const override {
         return "ResourcesController";
     }
+
+    Framebuffer *framebuffer(const std::string &name);
 
     /**
     * @brief Retrieves the model with a given name. You are not supposed to call `delete` on this pointer.
@@ -116,6 +119,8 @@ private:
     * @brief A hashmap of all the loaded @ref Shader.
     */
     std::unordered_map<std::string, std::unique_ptr<Shader>> m_shaders;
+
+    std::unordered_map<std::string, std::unique_ptr<Framebuffer>> m_framebuffer;
 
     const std::filesystem::path m_models_path = "resources/models";
     const std::filesystem::path m_textures_path = "resources/textures";

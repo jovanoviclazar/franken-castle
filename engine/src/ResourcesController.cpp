@@ -116,6 +116,15 @@ private:
     ResourcesController *m_resources_controller;
 };
 
+Framebuffer *ResourcesController::framebuffer(const std::string &name) {
+    auto &result = m_framebuffer[name];
+    if (!result) {
+        spdlog::info("load_framebuffer(name={})", name);
+        result = std::make_unique<Framebuffer>(Framebuffer());
+    }
+    return result.get();
+}
+
 Model *ResourcesController::model(const std::string &name) {
     auto &result = m_models[name];
     if (!result) {

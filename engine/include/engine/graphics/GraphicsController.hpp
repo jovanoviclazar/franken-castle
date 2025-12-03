@@ -9,6 +9,7 @@
 #include <engine/core/Controller.hpp>
 #include <engine/graphics/Camera.hpp>
 #include <engine/platform/PlatformEventObserver.hpp>
+#include <engine/resources/ScreenQuad.hpp>
 
 struct ImGuiContext;
 
@@ -176,8 +177,7 @@ private:
     glm::mat4 m_projection_matrix{};
     Camera m_camera{};
     ImGuiContext *m_imgui_context{};
-    unsigned int m_quad_vao{};
-    unsigned int m_quad_vbo{};
+    resources::ScreenQuad *m_quad{};
     unsigned int m_noise_texture{};
     std::vector<glm::vec3> m_ssao_kernel;
     std::vector<glm::vec3> m_ssao_noise;

@@ -44,20 +44,7 @@ void GraphicsController::initialize() {
     RG_GUARANTEE(ImGui_ImplGlfw_InitForOpenGL(handle, true), "ImGUI failed to initialize for OpenGL");
     RG_GUARANTEE(ImGui_ImplOpenGL3_Init("#version 330 core"), "ImGUI failed to initialize for OpenGL");
 
-    float quadVertices[] = {
-            -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-            1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-            1.0f, -1.0f, 0.0f, 1.0f, 0.0f};
-    CHECKED_GL_CALL(glGenVertexArrays, 1, &m_quad_vao);
-    CHECKED_GL_CALL(glGenBuffers, 1, &m_quad_vbo);
-    CHECKED_GL_CALL(glBindVertexArray, m_quad_vao);
-    CHECKED_GL_CALL(glBindBuffer, GL_ARRAY_BUFFER, m_quad_vbo);
-    CHECKED_GL_CALL(glBufferData, GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-    CHECKED_GL_CALL(glEnableVertexAttribArray, 0);
-    CHECKED_GL_CALL(glVertexAttribPointer, 0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
-    CHECKED_GL_CALL(glEnableVertexAttribArray, 1);
-    CHECKED_GL_CALL(glVertexAttribPointer, 1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
+    m_quad = new resources::ScreenQuad();
 
     auto g_buffer = resources->framebuffer("g_buffer");
     register_resizable_framebuffer(g_buffer);
@@ -170,9 +157,7 @@ void GraphicsController::draw_ssao(const resources::Shader *ssao_shader, const r
     g_buffer->bind_texture("g_normal", GL_TEXTURE1);
     CHECKED_GL_CALL(glActiveTexture, GL_TEXTURE2);
     CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_noise_texture);
-    CHECKED_GL_CALL(glBindVertexArray, m_quad_vao);
-    CHECKED_GL_CALL(glDrawArrays, GL_TRIANGLE_STRIP, 0, 4);
-    CHECKED_GL_CALL(glBindVertexArray, 0);
+    m_quad->draw();
     ssao_fbo->unbind();
 
     auto ssao_blur_fbo = resources->framebuffer("ssao_blur_fbo");
@@ -181,9 +166,7 @@ void GraphicsController::draw_ssao(const resources::Shader *ssao_shader, const r
     blur_shader->use();
     blur_shader->set_int("ssaoInput", 0);
     ssao_fbo->bind_texture("color_buffer", GL_TEXTURE0);
-    CHECKED_GL_CALL(glBindVertexArray, m_quad_vao);
-    CHECKED_GL_CALL(glDrawArrays, GL_TRIANGLE_STRIP, 0, 4);
-    CHECKED_GL_CALL(glBindVertexArray, 0);
+    m_quad->draw();
     ssao_blur_fbo->unbind();
 
     engine::graphics::OpenGL::clear_buffers();
@@ -196,9 +179,7 @@ void GraphicsController::draw_ssao(const resources::Shader *ssao_shader, const r
     g_buffer->bind_texture("g_normal", GL_TEXTURE1);
     g_buffer->bind_texture("g_albedo", GL_TEXTURE2);
     ssao_blur_fbo->bind_texture("color_buffer", GL_TEXTURE3);
-    CHECKED_GL_CALL(glBindVertexArray, m_quad_vao);
-    CHECKED_GL_CALL(glDrawArrays, GL_TRIANGLE_STRIP, 0, 4);
-    CHECKED_GL_CALL(glBindVertexArray, 0);
+    m_quad->draw();
 }
 
 void GraphicsController::draw_skybox(const resources::Shader *shader, const resources::Skybox *skybox) {

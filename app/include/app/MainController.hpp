@@ -83,7 +83,7 @@ private:
     std::vector<glm::mat4> m_trees;
     std::vector<glm::mat4> m_grass;
     bool m_cursor_enabled{true};
-    int m_bridge_opening{0};
+    int32_t m_bridge_opening{0};
     bool m_bridge_opened{false};
     glm::vec3 m_bridge_vec{0.0f, 0.0f, 1.0f};
     float m_bridge_radius{0.0f};

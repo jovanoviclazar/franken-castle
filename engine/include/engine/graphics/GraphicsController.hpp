@@ -178,7 +178,7 @@ private:
     Camera m_camera{};
     ImGuiContext *m_imgui_context{};
     resources::ScreenQuad *m_quad{};
-    unsigned int m_noise_texture{};
+    uint32_t m_noise_texture{};
     std::vector<glm::vec3> m_ssao_kernel;
     std::vector<glm::vec3> m_ssao_noise;
     std::vector<resources::Framebuffer *> m_resize_framebuffer;

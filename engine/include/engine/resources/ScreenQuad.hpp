@@ -21,8 +21,8 @@ public:
 private:
     void destroy();
 
-    unsigned int m_vao{};
-    unsigned int m_vbo{};
+    uint32_t m_vao{};
+    uint32_t m_vbo{};
     std::vector<float> m_vertices{};
 };
 }// namespace engine::resources

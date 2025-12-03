@@ -16,7 +16,7 @@ class Framebuffer {
     friend class ResourcesController;
 
 public:
-    void resize(int width, int height);
+    void resize(int32_t width, int32_t height);
 
     void destroy();
 
@@ -24,29 +24,29 @@ public:
 
     void unbind();
 
-    void generate_texture(const std::string &name, unsigned int attachment, int width, int height,
-                          int internalFormat, unsigned int format, unsigned int type,
-                          unsigned int minFilter, unsigned int magFilter,
-                          unsigned int wrapS, unsigned int wrapT);
+    void generate_texture(const std::string &name, uint32_t attachment, int32_t width, int32_t height,
+                          int32_t internalFormat, uint32_t format, uint32_t type,
+                          uint32_t minFilter, uint32_t magFilter,
+                          uint32_t wrapS, uint32_t wrapT);
 
-    void draw_buffers(unsigned int attachments[], int num);
+    void draw_buffers(uint32_t attachments[], int32_t num);
 
-    void generate_renderbuffer(int width, int height);
+    void generate_renderbuffer(int32_t width, int32_t height);
 
     void check_status();
 
-    void bind_texture(const std::string &name, unsigned int tex);
+    void bind_texture(const std::string &name, uint32_t tex);
 
 private:
     Framebuffer();
 
-    unsigned int m_fbo{};
-    unsigned int m_rbo{};
+    uint32_t m_fbo{};
+    uint32_t m_rbo{};
     std::string m_name{};
 
-    unsigned int m_width{};
-    unsigned int m_height{};
-    std::unordered_map<std::string, unsigned int> m_color_buffers;
+    uint32_t m_width{};
+    uint32_t m_height{};
+    std::unordered_map<std::string, uint32_t> m_color_buffers;
 };
 }// namespace engine::resources
 #endif//FRAMEBUFFER_HPP

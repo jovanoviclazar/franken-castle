@@ -1,7 +1,7 @@
 # FRANKEN-CASTLE
 
 34/2023 - Lazar Jovanović  
-{PROJECT DESCRIPTION}
+A 3D Scooby-Doo–themed scene built in a custom engine.
 
 ## Controls
 

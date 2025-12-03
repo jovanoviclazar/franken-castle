@@ -15,6 +15,22 @@ Framebuffer::Framebuffer() {
     CHECKED_GL_CALL(glGenFramebuffers, 1, &m_fbo);
 }
 
+void Framebuffer::resize(int width, int height) {
+    m_width = width;
+    m_height = height;
+
+    for (auto &[name, texId]: m_color_buffers) {
+        glBindTexture(GL_TEXTURE_2D, texId);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+    }
+
+    if (m_rbo != 0) {
+        glBindRenderbuffer(GL_RENDERBUFFER, m_rbo);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+    }
+}
+
+
 void Framebuffer::destroy() {
     CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, 0);
     for (auto &buff: m_color_buffers) {
@@ -33,9 +49,11 @@ void Framebuffer::destroy() {
 
 void Framebuffer::bind() {
     CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, m_fbo);
+    CHECKED_GL_CALL(glEnable, GL_DEPTH_TEST);
 }
 
 void Framebuffer::unbind() {
+    CHECKED_GL_CALL(glDisable, GL_DEPTH_TEST);
     CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, 0);
 }
 

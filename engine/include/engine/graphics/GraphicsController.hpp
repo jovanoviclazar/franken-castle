@@ -13,6 +13,7 @@
 struct ImGuiContext;
 
 namespace engine::resources {
+class Framebuffer;
 class Skybox;
 
 class Shader;
@@ -159,6 +160,9 @@ public:
     void draw_ssao_blur(const resources::Shader *shader);
     void draw_ssao_light(const resources::Shader *shader, bool spotlight);
 
+    void register_resizable_framebuffer(resources::Framebuffer *fb);
+    std::vector<resources::Framebuffer *> get_resize_framebuffers();
+
 private:
     /**
     * @brief Initializes OpenGL, ImGUI, and projection matrix params;
@@ -166,7 +170,6 @@ private:
     void initialize() override;
 
     void terminate();
-
     PerspectiveMatrixParams m_perspective_params{};
     OrthographicMatrixParams m_ortho_params{};
 
@@ -178,6 +181,7 @@ private:
     unsigned int m_noise_texture{};
     std::vector<glm::vec3> m_ssao_kernel;
     std::vector<glm::vec3> m_ssao_noise;
+    std::vector<resources::Framebuffer *> m_resize_framebuffer;
 };
 
 /**

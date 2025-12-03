@@ -23,8 +23,8 @@ ESC -> CLOSE
 
 ### Group A:
 
-[ ] Frame-buffers with post-processing   
-[x] Off-screen Anti-Aliasing  
+[x] Frame-buffers with post-processing   
+[] Off-screen Anti-Aliasing  
 [ ] Parallax Mapping
 [ ] Bloom with the use of HDR
 

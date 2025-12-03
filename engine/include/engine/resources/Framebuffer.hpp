@@ -16,6 +16,8 @@ class Framebuffer {
     friend class ResourcesController;
 
 public:
+    void resize(int width, int height);
+
     void destroy();
 
     void bind();

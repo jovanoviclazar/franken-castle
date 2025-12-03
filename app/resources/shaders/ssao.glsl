@@ -9,7 +9,7 @@ out vec2 TexCoords;
 void main()
 {
     TexCoords = aTexCoords;
-    gl_Position = vec4(aPos, 1.0);
+    gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);
 }
 
 //#shader fragment
@@ -24,12 +24,13 @@ uniform sampler2D gNormal;
 uniform sampler2D texNoise;
 
 uniform vec3 samples[64];
+uniform float width, height;
 
 int kernelSize = 64;
 float radius = 0.5;
 float bias = 0.025;
 
-const vec2 noiseScale = vec2(800.0 / 4.0, 600.0 / 4.0);
+vec2 noiseScale = vec2(width / 4.0, height / 4.0);
 
 uniform mat4 projection;
 

@@ -60,6 +60,7 @@ void GraphicsController::initialize() {
     CHECKED_GL_CALL(glVertexAttribPointer, 1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
 
     auto g_buffer = resources->framebuffer("g_buffer");
+    register_resizable_framebuffer(g_buffer);
     g_buffer->generate_texture("g_position", GL_COLOR_ATTACHMENT0, platform->window()->width(), platform->window()->height(), GL_RGBA16F, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
     g_buffer->generate_texture("g_normal", GL_COLOR_ATTACHMENT1, platform->window()->width(), platform->window()->height(), GL_RGBA16F, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_NEAREST, 0, 0);
     g_buffer->generate_texture("g_albedo", GL_COLOR_ATTACHMENT2, platform->window()->width(), platform->window()->height(), GL_RGBA, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_NEAREST, 0, 0);
@@ -69,7 +70,9 @@ void GraphicsController::initialize() {
     g_buffer->check_status();
 
     auto ssao_fbo = resources->framebuffer("ssao_fbo");
+    register_resizable_framebuffer(ssao_fbo);
     auto ssao_blur_fbo = resources->framebuffer("ssao_blur_fbo");
+    register_resizable_framebuffer(ssao_blur_fbo);
 
     ssao_fbo->generate_texture("color_buffer", GL_COLOR_ATTACHMENT0, platform->window()->width(), platform->window()->height(), GL_RED, GL_RED, GL_FLOAT, GL_NEAREST, GL_NEAREST, 0, 0);
     ssao_fbo->check_status();
@@ -111,12 +114,24 @@ void GraphicsController::terminate() {
     }
 }
 
+void GraphicsController::register_resizable_framebuffer(resources::Framebuffer *fb) {
+    m_resize_framebuffer.push_back(fb);
+}
+
+std::vector<resources::Framebuffer *> GraphicsController::get_resize_framebuffers() {
+    return m_resize_framebuffer;
+}
+
 void GraphicsPlatformEventObserver::on_window_resize(int width, int height) {
     m_graphics->perspective_params().Width = static_cast<float>(width);
     m_graphics->perspective_params().Height = static_cast<float>(height);
     m_graphics->orthographic_params().Right = static_cast<float>(width);
     m_graphics->orthographic_params().Top = static_cast<float>(height);
     CHECKED_GL_CALL(glViewport, 0, 0, width, height);
+    auto resources = engine::core::Controller::get<resources::ResourcesController>();
+    for (auto &fb: m_graphics->get_resize_framebuffers()) {
+        fb->resize(width, height);
+    }
 }
 
 std::string_view GraphicsController::name() const {
@@ -136,6 +151,7 @@ void GraphicsController::end_gui() {
 
 void GraphicsController::draw_ssao(const resources::Shader *ssao_shader, const resources::Shader *blur_shader, const resources::Shader *light_shader) {
     auto resources = engine::core::Controller::get<resources::ResourcesController>();
+    auto platform = engine::core::Controller::get<platform::PlatformController>();
     auto g_buffer = resources->framebuffer("g_buffer");
     auto ssao_fbo = resources->framebuffer("ssao_fbo");
     ssao_fbo->bind();
@@ -144,6 +160,8 @@ void GraphicsController::draw_ssao(const resources::Shader *ssao_shader, const r
     ssao_shader->set_int("gPosition", 0);
     ssao_shader->set_int("gNormal", 1);
     ssao_shader->set_int("texNoise", 2);
+    ssao_shader->set_float("width", platform->window()->width());
+    ssao_shader->set_float("height", platform->window()->height());
     for (unsigned int i = 0; i < 64; ++i) {
         ssao_shader->set_vec3("samples[" + std::to_string(i) + "]", m_ssao_kernel[i]);
     }

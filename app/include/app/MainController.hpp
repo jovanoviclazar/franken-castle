@@ -70,6 +70,8 @@ private:
 
     glm::mat4 get_model_matrix(ModelParams par);
 
+    glm::mat4 get_model_matrix(glm::vec3 scl, glm::vec3 rot_vec, float rot_ang, glm::vec3 pos);
+
     void set_light(const resources::Shader *shader) const;
 
     ModelParams m_floor{{0.0f, 0.0f, 0.0f}, {0.1f, 0.1f, 0.1f}};
@@ -77,7 +79,6 @@ private:
     ModelParams m_bridge{{-11.2f, 0.25f, -4.8f}, {5.0f, 4.8f, 8.0f}};
     ModelParams m_plank{{-11.2f, 0.0f, -4.8f}, {5.0f, 4.8f, 4.0f}};
     ModelParams m_water{{-15.0f, 0.0f, 0.0f}, {0.1f, 0.1f, 0.1f}};
-    ModelParams m_alligator{{-15.0f, -0.49f, 15.0f}, {4.0f, 4.0f, 4.0f}};
     ModelParams m_mystery_machine{{-35.0f, 0.0f, 5.0f}, {1.5f, 1.5f, 1.5f}};
 
     std::vector<glm::mat4> m_trees;
@@ -88,6 +89,18 @@ private:
     glm::vec3 m_bridge_vec{0.0f, 0.0f, 1.0f};
     float m_bridge_radius{0.0f};
     bool m_spotlight_enabled{false};
+    struct Alligator {
+        bool Start{false};
+        bool FirstTurn{false};
+        bool SecondTurn{false};
+        bool End{false};
+        bool InProcess{false};
+        const glm::vec3 StartPos{-15.0f, -0.49f, 15.0f};
+        const glm::vec3 EndPos{-15.0f, -0.49f, -30.0f};
+        glm::vec3 CurrPos{-15.0f, -0.49f, 15.0f};
+        glm::vec3 Scale{4.0f, 4.0f, 4.0f};
+        float Angle{0.0f};
+    } m_alligator;
 };
 }// namespace engine::main::app
 #endif//MAINCONTROLLER_HPP

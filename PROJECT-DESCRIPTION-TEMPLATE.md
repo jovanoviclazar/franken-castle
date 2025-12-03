@@ -10,6 +10,7 @@ A -> MOVES LEFT
 S -> MOVES BACKWARD  
 D -> MOVES RIGHT  
 B -> TOGGLE THE BRIDGE  
+F -> TOGGLE THE FLASHLIGHT  
 F1 -> TOGGLE THE MOUSE  
 ESC -> CLOSE
 
@@ -19,12 +20,13 @@ ESC -> CLOSE
 
 [x] Model with lighting  
 [x] Two types of lighting with customizable colors and movement through GUI or ACTIONS  
-[ ] {ACTION_X} --- AFTER_M_SECONDS---Triggers---> {EVENT_A} ---> AFTER_N_SECONDS---Triggers---> {EVENT_B}
+[x] PRESS_C --- AFTER_2_SECONDS ------> ALLIGATOR_START_MOVING --- AFTER_1_SECOND ------> ALLIGATOR_TURN_AROUND ---
+AFTER_2_SECONDS ------> ALLIGATOR_RETURN_TO_START --- AFTER_1_SECOND ------> ALLIGATOR_FINAL_TURN
 
 ### Group A:
 
 [x] Frame-buffers with post-processing   
-[] Off-screen Anti-Aliasing  
+[ ] Off-screen Anti-Aliasing  
 [ ] Parallax Mapping
 [ ] Bloom with the use of HDR
 

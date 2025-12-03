@@ -102,22 +102,29 @@ void MainController::poll_events() {
                 .state() == engine::platform::Key::State::JustPressed) {
         m_spotlight_enabled = !m_spotlight_enabled;
     }
+    if (platform->key(engine::platform::KEY_C).state() == engine::platform::Key::State::JustPressed) {
+        if (!m_alligator.InProcess) {
+            m_alligator.Start = true;
+            m_alligator.InProcess = true;
+        }
+    }
 }
 
 void MainController::update() {
     update_camera();
+    auto platform = engine::core::Controller::get<engine::platform::PlatformController>();
+    float dt = platform->dt();
     if (m_bridge_opening > 0) {
-        auto platform = engine::core::Controller::get<engine::platform::PlatformController>();
-        float dt = 20 * platform->dt();
+
         if (m_bridge_opened) {
-            m_bridge_radius -= dt;
+            m_bridge_radius -= dt * 20;
             if (m_bridge_radius < 0.0f) {
                 m_bridge_radius = 0.0f;
                 m_bridge_opening--;
                 m_bridge_opened = false;
             }
         } else {
-            m_bridge_radius += dt;
+            m_bridge_radius += dt * 20;
             if (m_bridge_radius > 90.0f) {
                 m_bridge_radius = 90.0f;
                 m_bridge_opening--;
@@ -126,6 +133,33 @@ void MainController::update() {
         }
         // spdlog::info("Bridge radius: {}", m_bridge_radius);
         // spdlog::info("Bridge opening: {}", m_bridge_opening);
+    }
+    if (m_alligator.InProcess) {
+        if (m_alligator.Start) {
+            m_alligator.CurrPos -= glm::vec3(0.0f, 0.0f, 1.0f) * dt * 20.0f;
+            if (m_alligator.EndPos[2] >= m_alligator.CurrPos[2]) {
+                m_alligator.Start = false;
+                m_alligator.FirstTurn = true;
+            }
+        } else if (m_alligator.FirstTurn) {
+            m_alligator.Angle += dt * 200.0f;
+            if (m_alligator.Angle > 180.0f) {
+                m_alligator.FirstTurn = false;
+                m_alligator.End = true;
+            }
+        } else if (m_alligator.End) {
+            m_alligator.CurrPos += glm::vec3(0.0f, 0.0f, 1.0f) * dt * 20.0f;
+            if (m_alligator.StartPos[2] <= m_alligator.CurrPos[2]) {
+                m_alligator.End = false;
+                m_alligator.SecondTurn = true;
+            }
+        } else {
+            m_alligator.Angle -= dt * 200.0f;
+            if (m_alligator.Angle <= 0.0f) {
+                m_alligator.SecondTurn = false;
+                m_alligator.InProcess = false;
+            }
+        }
     }
 }
 
@@ -217,7 +251,7 @@ void MainController::draw_alligator() {
     shader->use();
     shader->set_mat4("projection", graphics->projection_matrix());
     shader->set_mat4("view", graphics->camera()->view_matrix());
-    shader->set_mat4("model", get_model_matrix(m_alligator));
+    shader->set_mat4("model", get_model_matrix(m_alligator.Scale, {0.0f, 1.0f, 0.0f}, m_alligator.Angle, m_alligator.CurrPos));
     alligator->draw(shader);
 }
 
@@ -297,7 +331,7 @@ void MainController::draw_ssao() {
 void MainController::set_light(const resources::Shader *shader) const {
     auto graphics = engine::core::Controller::get<engine::graphics::GraphicsController>();
     shader->set_vec3("dirLight.direction", glm::vec3(1.0f, -1.0f, 1.0f));
-    shader->set_vec3("dirLight.ambient", glm::vec3(0.05f, 0.05f, 0.05f));
+    shader->set_vec3("dirLight.ambient", glm::vec3(0.1f, 0.1f, 0.1f));
     shader->set_vec3("dirLight.diffuse", glm::vec3(0.4f, 0.4f, 0.4f));
     shader->set_vec3("dirLight.specular", glm::vec3(0.5f, 0.5f, 0.5f));
     shader->set_vec3("spotLight.position", graphics->camera()->Position);
@@ -318,6 +352,13 @@ glm::mat4 MainController::get_model_matrix(ModelParams par) {
         ret = rotate(ret, glm::radians(r.second), r.first);
     }
     ret = scale(ret, par.Scale);
+    return ret;
+}
+
+glm::mat4 MainController::get_model_matrix(glm::vec3 scl, glm::vec3 rot_vec, float rot_ang, glm::vec3 pos) {
+    glm::mat4 ret = translate(glm::mat4(1.0f), pos);
+    ret = rotate(ret, glm::radians(rot_ang), rot_vec);
+    ret = scale(ret, scl);
     return ret;
 }
 }// namespace engine::main::app

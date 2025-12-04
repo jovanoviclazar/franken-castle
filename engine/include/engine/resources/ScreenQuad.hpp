@@ -12,6 +12,8 @@ class ScreenQuad {
 public:
     ScreenQuad();
 
+    void init();
+
     void bind();
 
     void unbind();

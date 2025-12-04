@@ -15,6 +15,9 @@ ScreenQuad::ScreenQuad() {
             -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
             1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
             1.0f, -1.0f, 0.0f, 1.0f, 0.0f};
+}
+
+void ScreenQuad::init() {
 
     CHECKED_GL_CALL(glGenVertexArrays, 1, &m_vao);
     CHECKED_GL_CALL(glGenBuffers, 1, &m_vbo);
@@ -31,7 +34,6 @@ ScreenQuad::ScreenQuad() {
 
     CHECKED_GL_CALL(glBindVertexArray, 0);
 }
-
 
 void ScreenQuad::bind() {
     glBindVertexArray(m_vao);

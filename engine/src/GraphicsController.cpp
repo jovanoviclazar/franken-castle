@@ -44,7 +44,7 @@ void GraphicsController::initialize() {
     RG_GUARANTEE(ImGui_ImplGlfw_InitForOpenGL(handle, true), "ImGUI failed to initialize for OpenGL");
     RG_GUARANTEE(ImGui_ImplOpenGL3_Init("#version 330 core"), "ImGUI failed to initialize for OpenGL");
 
-    m_quad = new resources::ScreenQuad();
+    m_quad.init();
 
     auto g_buffer = framebuffer("g_buffer");
     register_resizable_framebuffer(g_buffer);
@@ -156,7 +156,7 @@ void GraphicsController::draw_ssao(const resources::Shader *ssao_shader, const r
     g_buffer->bind_texture("g_normal", GL_TEXTURE1);
     CHECKED_GL_CALL(glActiveTexture, GL_TEXTURE2);
     CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_noise_texture);
-    m_quad->draw();
+    m_quad.draw();
     ssao_fbo->unbind();
 
     auto ssao_blur_fbo = framebuffer("ssao_blur_fbo");
@@ -165,7 +165,7 @@ void GraphicsController::draw_ssao(const resources::Shader *ssao_shader, const r
     blur_shader->use();
     blur_shader->set_int("ssaoInput", 0);
     ssao_fbo->bind_texture("color_buffer", GL_TEXTURE0);
-    m_quad->draw();
+    m_quad.draw();
     ssao_blur_fbo->unbind();
 
     engine::graphics::OpenGL::clear_buffers();
@@ -178,7 +178,7 @@ void GraphicsController::draw_ssao(const resources::Shader *ssao_shader, const r
     g_buffer->bind_texture("g_normal", GL_TEXTURE1);
     g_buffer->bind_texture("g_albedo", GL_TEXTURE2);
     ssao_blur_fbo->bind_texture("color_buffer", GL_TEXTURE3);
-    m_quad->draw();
+    m_quad.draw();
 }
 
 void GraphicsController::draw_skybox(const resources::Shader *shader, const resources::Skybox *skybox) {

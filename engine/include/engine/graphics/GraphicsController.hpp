@@ -181,7 +181,7 @@ private:
     glm::mat4 m_projection_matrix{};
     Camera m_camera{};
     ImGuiContext *m_imgui_context{};
-    resources::ScreenQuad *m_quad{};
+    resources::ScreenQuad m_quad{};
     uint32_t m_noise_texture{};
     std::vector<glm::vec3> m_ssao_kernel;
     std::vector<glm::vec3> m_ssao_noise;

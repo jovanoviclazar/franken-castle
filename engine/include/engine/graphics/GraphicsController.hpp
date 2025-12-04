@@ -8,19 +8,21 @@
 
 #include <engine/core/Controller.hpp>
 #include <engine/graphics/Camera.hpp>
+#include <engine/graphics/Framebuffer.hpp>
 #include <engine/platform/PlatformEventObserver.hpp>
 #include <engine/resources/ScreenQuad.hpp>
+#include <unordered_map>
 
 struct ImGuiContext;
 
 namespace engine::resources {
-class Framebuffer;
 class Skybox;
 
 class Shader;
 }// namespace engine::resources
 
 namespace engine::graphics {
+class Framebuffer;
 /**
 * @brief Parameters used to define a perspective projection matrix.
 */
@@ -161,8 +163,9 @@ public:
     void draw_ssao_blur(const resources::Shader *shader);
     void draw_ssao_light(const resources::Shader *shader, bool spotlight);
 
-    void register_resizable_framebuffer(resources::Framebuffer *fb);
-    std::vector<resources::Framebuffer *> get_resize_framebuffers();
+    void register_resizable_framebuffer(Framebuffer *fb);
+    const std::vector<Framebuffer *> &get_resize_framebuffers();
+    Framebuffer *framebuffer(const std::string &name);
 
 private:
     /**
@@ -173,6 +176,7 @@ private:
     void terminate();
     PerspectiveMatrixParams m_perspective_params{};
     OrthographicMatrixParams m_ortho_params{};
+    std::unordered_map<std::string, std::unique_ptr<Framebuffer>> m_framebuffer;
 
     glm::mat4 m_projection_matrix{};
     Camera m_camera{};
@@ -181,7 +185,7 @@ private:
     uint32_t m_noise_texture{};
     std::vector<glm::vec3> m_ssao_kernel;
     std::vector<glm::vec3> m_ssao_noise;
-    std::vector<resources::Framebuffer *> m_resize_framebuffer;
+    std::vector<Framebuffer *> m_resize_framebuffer;
 };
 
 /**

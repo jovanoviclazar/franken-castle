@@ -46,7 +46,7 @@ void GraphicsController::initialize() {
 
     m_quad = new resources::ScreenQuad();
 
-    auto g_buffer = resources->framebuffer("g_buffer");
+    auto g_buffer = framebuffer("g_buffer");
     register_resizable_framebuffer(g_buffer);
     g_buffer->generate_texture("g_position", GL_COLOR_ATTACHMENT0, platform->window()->width(), platform->window()->height(), GL_RGBA16F, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
     g_buffer->generate_texture("g_normal", GL_COLOR_ATTACHMENT1, platform->window()->width(), platform->window()->height(), GL_RGBA16F, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_NEAREST, 0, 0);
@@ -56,9 +56,9 @@ void GraphicsController::initialize() {
     g_buffer->generate_renderbuffer(platform->window()->width(), platform->window()->height());
     g_buffer->check_status();
 
-    auto ssao_fbo = resources->framebuffer("ssao_fbo");
+    auto ssao_fbo = framebuffer("ssao_fbo");
     register_resizable_framebuffer(ssao_fbo);
-    auto ssao_blur_fbo = resources->framebuffer("ssao_blur_fbo");
+    auto ssao_blur_fbo = framebuffer("ssao_blur_fbo");
     register_resizable_framebuffer(ssao_blur_fbo);
 
     ssao_fbo->generate_texture("color_buffer", GL_COLOR_ATTACHMENT0, platform->window()->width(), platform->window()->height(), GL_RED, GL_RED, GL_FLOAT, GL_NEAREST, GL_NEAREST, 0, 0);
@@ -101,11 +101,11 @@ void GraphicsController::terminate() {
     }
 }
 
-void GraphicsController::register_resizable_framebuffer(resources::Framebuffer *fb) {
+void GraphicsController::register_resizable_framebuffer(Framebuffer *fb) {
     m_resize_framebuffer.push_back(fb);
 }
 
-std::vector<resources::Framebuffer *> GraphicsController::get_resize_framebuffers() {
+const std::vector<Framebuffer *> &GraphicsController::get_resize_framebuffers() {
     return m_resize_framebuffer;
 }
 
@@ -137,10 +137,9 @@ void GraphicsController::end_gui() {
 }
 
 void GraphicsController::draw_ssao(const resources::Shader *ssao_shader, const resources::Shader *blur_shader, const resources::Shader *light_shader) {
-    auto resources = engine::core::Controller::get<resources::ResourcesController>();
     auto platform = engine::core::Controller::get<platform::PlatformController>();
-    auto g_buffer = resources->framebuffer("g_buffer");
-    auto ssao_fbo = resources->framebuffer("ssao_fbo");
+    auto g_buffer = framebuffer("g_buffer");
+    auto ssao_fbo = framebuffer("ssao_fbo");
     ssao_fbo->bind();
     engine::graphics::OpenGL::clear_buffers();
     ssao_shader->use();
@@ -160,7 +159,7 @@ void GraphicsController::draw_ssao(const resources::Shader *ssao_shader, const r
     m_quad->draw();
     ssao_fbo->unbind();
 
-    auto ssao_blur_fbo = resources->framebuffer("ssao_blur_fbo");
+    auto ssao_blur_fbo = framebuffer("ssao_blur_fbo");
     ssao_blur_fbo->bind();
     engine::graphics::OpenGL::clear_buffers();
     blur_shader->use();
@@ -196,4 +195,14 @@ void GraphicsController::draw_skybox(const resources::Shader *shader, const reso
     CHECKED_GL_CALL(glDepthFunc, GL_LESS);// set depth function back to default
     CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_CUBE_MAP, 0);
 }
+
+Framebuffer *GraphicsController::framebuffer(const std::string &name) {
+    auto &result = m_framebuffer[name];
+    if (!result) {
+        spdlog::info("load_framebuffer(name={})", name);
+        result = std::make_unique<Framebuffer>(Framebuffer());
+    }
+    return result.get();
+}
+
 }// namespace engine::graphics

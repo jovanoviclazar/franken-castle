@@ -38,7 +38,7 @@ void MainController::initialize() {
     m_trees.push_back(get_model_matrix({{15.0f, 0.0f, 40.0f}, {2.6f, 2.6f, 2.6f}}));
 
     auto tree = engine::core::Controller::get<engine::resources::ResourcesController>()->model("pine_tree");
-    engine::graphics::OpenGL::load_instancing(m_trees, tree->meshes());
+    resources::Model::load_instancing(m_trees, tree->meshes());
 
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -71,7 +71,7 @@ void MainController::initialize() {
         }
     }
     auto grass = engine::core::Controller::get<engine::resources::ResourcesController>()->model("grass");
-    engine::graphics::OpenGL::load_instancing(m_grass, grass->meshes());
+    resources::Model::load_instancing(m_grass, grass->meshes());
 
     m_plank.Rotate.emplace_back(glm::vec3(0.0f, 1.0f, 0.0f), 90.0f);
 
@@ -193,7 +193,7 @@ void MainController::begin_draw() {
 }
 
 void MainController::draw() {
-    auto g_buffer = engine::core::Controller::get<engine::resources::ResourcesController>()->framebuffer("g_buffer");
+    auto g_buffer = engine::core::Controller::get<engine::graphics::GraphicsController>()->framebuffer("g_buffer");
     g_buffer->bind();
     engine::graphics::OpenGL::clear_buffers();
     // draw_skybox();

@@ -14,8 +14,6 @@
 #include <iosfwd>
 #include <stb_image.h>
 #include <vector>
-#include <filesystem>
-#include <stb_image.h>
 
 namespace engine::graphics {
 int32_t OpenGL::shader_type_to_opengl_type(resources::ShaderType type) {
@@ -210,32 +208,5 @@ int32_t stbi_number_of_channels_to_gl_format(int32_t number_of_channels) {
         default: RG_SHOULD_NOT_REACH_HERE("Unknown channels {}", number_of_channels);
     }
 }
-
-void OpenGL::load_instancing(std::vector<glm::mat4> &data, const std::vector<resources::Mesh> &meshes) {
-    uint32_t buffer;
-    CHECKED_GL_CALL(glGenBuffers, 1, &buffer);
-    CHECKED_GL_CALL(glBindBuffer, GL_ARRAY_BUFFER, buffer);
-    CHECKED_GL_CALL(glBufferData, GL_ARRAY_BUFFER, data.size() * sizeof(glm::mat4), &data[0], GL_STATIC_DRAW);
-    for (const auto &mesh: meshes) {
-        uint32_t vao = mesh.get_vao();
-        CHECKED_GL_CALL(glBindVertexArray, vao);
-        CHECKED_GL_CALL(glEnableVertexAttribArray, 3);
-        CHECKED_GL_CALL(glVertexAttribPointer, 3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *) 0);
-        CHECKED_GL_CALL(glEnableVertexAttribArray, 4);
-        CHECKED_GL_CALL(glVertexAttribPointer, 4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *) (sizeof(glm::vec4)));
-        CHECKED_GL_CALL(glEnableVertexAttribArray, 5);
-        CHECKED_GL_CALL(glVertexAttribPointer, 5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *) (2 * sizeof(glm::vec4)));
-        CHECKED_GL_CALL(glEnableVertexAttribArray, 6);
-        CHECKED_GL_CALL(glVertexAttribPointer, 6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *) (3 * sizeof(glm::vec4)));
-
-        CHECKED_GL_CALL(glVertexAttribDivisor, 3, 1);
-        CHECKED_GL_CALL(glVertexAttribDivisor, 4, 1);
-        CHECKED_GL_CALL(glVertexAttribDivisor, 5, 1);
-        CHECKED_GL_CALL(glVertexAttribDivisor, 6, 1);
-
-        CHECKED_GL_CALL(glBindVertexArray, 0);
-    }
-}
-
 
 };// namespace engine::graphics

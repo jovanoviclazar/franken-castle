@@ -55,6 +55,8 @@ public:
         return m_name;
     }
 
+    static void load_instancing(const std::vector<glm::mat4> &data, const std::vector<resources::Mesh> &meshes);
+
 private:
     /**
     * @brief The meshes in the model.

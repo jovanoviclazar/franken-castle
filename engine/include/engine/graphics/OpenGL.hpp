@@ -142,8 +142,6 @@ public:
     */
     static std::string get_compilation_error_message(uint32_t shader_id);
 
-    static void load_instancing(std::vector<glm::mat4> &data, const std::vector<resources::Mesh> &meshes);
-
 private:
     /**
     * @brief Throws an engine::util::EngineError of type @ref engine::util::EngineError::Type::OpenGLError if an OpenGL error occurred. Used internally.

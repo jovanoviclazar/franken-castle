@@ -5,12 +5,12 @@
 // clang-format off
 #include <glad/glad.h>
 // clang-format on
+#include <../include/engine/graphics/Framebuffer.hpp>
 #include <engine/graphics/OpenGL.hpp>
-#include <engine/resources/Framebuffer.hpp>
 #include <engine/util/Errors.hpp>
 #include <spdlog/spdlog.h>
 
-namespace engine::resources {
+namespace engine::graphics {
 Framebuffer::Framebuffer() {
     CHECKED_GL_CALL(glGenFramebuffers, 1, &m_fbo);
 }
@@ -108,4 +108,4 @@ void Framebuffer::bind_texture(const std::string &name, uint32_t tex) {
     CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_color_buffers[name]);
 }
 
-}// namespace engine::resources
+}// namespace engine::graphics

@@ -10,10 +10,10 @@
 #include <unordered_map>
 #include <utility>
 
-namespace engine::resources {
+namespace engine::graphics {
 class Framebuffer {
 
-    friend class ResourcesController;
+    friend class GraphicsController;
 
 public:
     void resize(int32_t width, int32_t height);
@@ -48,5 +48,5 @@ private:
     uint32_t m_height{};
     std::unordered_map<std::string, uint32_t> m_color_buffers;
 };
-}// namespace engine::resources
+}// namespace engine::graphics
 #endif//FRAMEBUFFER_HPP

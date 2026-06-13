@@ -1,0 +1,46 @@
+# Blender 4.5.3 LTS MTL File: 'None'
+# www.blender.org
+
+newmtl Color_base
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd Color_base_baseColor.png
+map_Ke Color_base_emissive.png
+map_Bump -bm 1.000000 Color_base_normal.png
+
+newmtl Inside_color
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd Inside_color_baseColor.png
+map_Bump -bm 1.000000 Inside_color_normal.png
+
+newmtl Wheels_color
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd Wheels_color_baseColor.png
+map_Bump -bm 1.000000 Wheels_color_normal.png
+
+newmtl Windiws_color
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+illum 2
+map_Kd Windiws_color_baseColor.png
+map_d Windiws_color_baseColor.png
+map_Bump -bm 1.000000 Windiws_color_normal.png

@@ -1,0 +1,111 @@
+//
+// Created by cvnpko on 12/1/25.
+//
+
+// clang-format off
+#include <glad/glad.h>
+// clang-format on
+#include <../include/engine/graphics/Framebuffer.hpp>
+#include <engine/graphics/OpenGL.hpp>
+#include <engine/util/Errors.hpp>
+#include <spdlog/spdlog.h>
+
+namespace engine::graphics {
+Framebuffer::Framebuffer() {
+    CHECKED_GL_CALL(glGenFramebuffers, 1, &m_fbo);
+}
+
+void Framebuffer::resize(int32_t width, int32_t height) {
+    m_width = width;
+    m_height = height;
+
+    for (auto &[name, texId]: m_color_buffers) {
+        glBindTexture(GL_TEXTURE_2D, texId);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+    }
+
+    if (m_rbo != 0) {
+        glBindRenderbuffer(GL_RENDERBUFFER, m_rbo);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+    }
+}
+
+
+void Framebuffer::destroy() {
+    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, 0);
+    for (auto &buff: m_color_buffers) {
+        CHECKED_GL_CALL(glDeleteTextures, 1, &buff.second);
+    }
+    m_color_buffers.clear();
+    if (m_rbo != 0) {
+        CHECKED_GL_CALL(glDeleteRenderbuffers, 1, &m_rbo);
+        m_rbo = 0;
+    }
+    if (m_fbo != 0) {
+        CHECKED_GL_CALL(glDeleteFramebuffers, 1, &m_fbo);
+        m_fbo = 0;
+    }
+}
+
+void Framebuffer::bind() {
+    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, m_fbo);
+    CHECKED_GL_CALL(glEnable, GL_DEPTH_TEST);
+}
+
+void Framebuffer::unbind() {
+    CHECKED_GL_CALL(glDisable, GL_DEPTH_TEST);
+    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, 0);
+}
+
+void Framebuffer::generate_texture(const std::string &name, uint32_t attachment, int32_t width, int32_t height,
+                                   int32_t internalFormat, uint32_t format, uint32_t type,
+                                   uint32_t minFilter, uint32_t magFilter,
+                                   uint32_t wrapS, uint32_t wrapT) {
+    auto &result = m_color_buffers[name];
+    if (!result) {
+        spdlog::info("load_framebuffer(name={})", name);
+        CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, m_fbo);
+        uint32_t color_buffer = 0;
+        CHECKED_GL_CALL(glGenTextures, 1, &color_buffer);
+        CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, color_buffer);
+        CHECKED_GL_CALL(glTexImage2D, GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, (void *) 0);
+        if (minFilter != 0) CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
+        if (magFilter != 0) CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
+        if (wrapS != 0) CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
+        if (wrapT != 0) CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
+        CHECKED_GL_CALL(glFramebufferTexture2D, GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, color_buffer, 0);
+        CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, 0);
+        m_color_buffers[name] = color_buffer;
+    }
+}
+
+void Framebuffer::draw_buffers(uint32_t attachments[], int32_t num) {
+    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, m_fbo);
+    CHECKED_GL_CALL(glDrawBuffers, num, attachments);
+    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, 0);
+}
+
+void Framebuffer::generate_renderbuffer(int32_t width, int32_t height) {
+    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, m_fbo);
+    CHECKED_GL_CALL(glGenRenderbuffers, 1, &m_rbo);
+    CHECKED_GL_CALL(glBindRenderbuffer, GL_RENDERBUFFER, m_rbo);
+    CHECKED_GL_CALL(glRenderbufferStorage, GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+    CHECKED_GL_CALL(glFramebufferRenderbuffer, GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rbo);
+    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, 0);
+}
+
+void Framebuffer::check_status() {
+    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, m_fbo);
+    RG_GUARANTEE(CHECKED_GL_CALL(glCheckFramebufferStatus, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not complete!");
+    CHECKED_GL_CALL(glBindFramebuffer, GL_FRAMEBUFFER, 0);
+}
+
+void Framebuffer::bind_texture(const std::string &name, uint32_t tex) {
+    if (!m_color_buffers[name]) {
+        spdlog::error("error_framebuffer(name={})", name);
+    }
+    CHECKED_GL_CALL(glActiveTexture, tex);
+    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_color_buffers[name]);
+}
+
+}// namespace engine::graphics

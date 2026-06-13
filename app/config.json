@@ -1,11 +1,47 @@
 {
   "resources": {
     "models": {
+      "floor": {
+        "path": "floor/floor.obj",
+        "flip_uvs": false
+      },
+      "pine_tree": {
+        "path": "tree/tree.obj",
+        "flip_uvs": true
+      },
+      "castle": {
+        "path": "castle/castle.obj",
+        "flip_uvs": false
+      },
+      "grass": {
+        "path": "grass/grass.obj",
+        "flip_uvs": true
+      },
+      "bridge": {
+        "path": "bridge/bridge_planks.obj",
+        "flip_uvs": true
+      },
+      "plank": {
+        "path": "plank/plank.obj",
+        "flip_uvs": true
+      },
+      "water": {
+        "path": "water/water.obj",
+        "flip_uvs": true
+      },
+      "alligator": {
+        "path": "alligator/alligator.obj",
+        "flip_uvs": true
+      },
+      "mystery_machine": {
+        "path": "mystery_machine/mystery_machine.obj",
+        "flip_uvs": true
+      }
     }
   },
   "window": {
     "height": 600,
-    "title": "Hello, window!",
+    "title": "Franken Castle",
     "width": 800
   }
 }

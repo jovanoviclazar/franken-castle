@@ -1,8 +1,8 @@
-
+#include <array>
 // clang-format off
 #include <glad/glad.h>
 // clang-format on
-#include <array>
+#include <engine/graphics/Camera.hpp>
 #include <engine/graphics/OpenGL.hpp>
 #include <engine/resources/Shader.hpp>
 #include <engine/resources/ShaderCompiler.hpp>
@@ -10,7 +10,10 @@
 #include <engine/util/Errors.hpp>
 #include <engine/util/Utils.hpp>
 #include <filesystem>
+#include <glad/glad.h>
+#include <iosfwd>
 #include <stb_image.h>
+#include <vector>
 
 namespace engine::graphics {
 int32_t OpenGL::shader_type_to_opengl_type(resources::ShaderType type) {

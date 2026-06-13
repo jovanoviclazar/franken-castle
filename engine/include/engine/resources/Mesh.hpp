@@ -37,6 +37,9 @@ public:
     * @param shader The shader to use for drawing.
     */
     void draw(const Shader *shader);
+    void draw_instancing(const Shader *shader, uint32_t amount);
+
+    uint32_t get_vao() const { return m_vao; }
 
     /**
     * @brief Destroys the mesh in the OpenGL context.

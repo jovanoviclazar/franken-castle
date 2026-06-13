@@ -6,9 +6,12 @@
 #include <engine/graphics/GraphicsController.hpp>
 #include <engine/graphics/OpenGL.hpp>
 #include <engine/platform/PlatformController.hpp>
+#include <engine/resources/ResourcesController.hpp>
 #include <engine/resources/Skybox.hpp>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include <random>
+#include <spdlog/spdlog.h>
 
 namespace engine::graphics {
 
@@ -17,6 +20,7 @@ void GraphicsController::initialize() {
     RG_GUARANTEE(opengl_initialized, "OpenGL failed to init!");
 
     auto platform = engine::core::Controller::get<platform::PlatformController>();
+    auto resources = engine::core::Controller::get<resources::ResourcesController>();
     auto handle = platform->window()->handle_();
     m_perspective_params.FOV = glm::radians(m_camera.Zoom);
     m_perspective_params.Width = static_cast<float>(platform->window()->width());
@@ -39,6 +43,54 @@ void GraphicsController::initialize() {
     (void) io;
     RG_GUARANTEE(ImGui_ImplGlfw_InitForOpenGL(handle, true), "ImGUI failed to initialize for OpenGL");
     RG_GUARANTEE(ImGui_ImplOpenGL3_Init("#version 330 core"), "ImGUI failed to initialize for OpenGL");
+
+    m_quad.init();
+
+    auto g_buffer = framebuffer("g_buffer");
+    register_resizable_framebuffer(g_buffer);
+    g_buffer->generate_texture("g_position", GL_COLOR_ATTACHMENT0, platform->window()->width(), platform->window()->height(), GL_RGBA16F, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+    g_buffer->generate_texture("g_normal", GL_COLOR_ATTACHMENT1, platform->window()->width(), platform->window()->height(), GL_RGBA16F, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_NEAREST, 0, 0);
+    g_buffer->generate_texture("g_albedo", GL_COLOR_ATTACHMENT2, platform->window()->width(), platform->window()->height(), GL_RGBA, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_NEAREST, 0, 0);
+    unsigned int attachments[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+    g_buffer->draw_buffers(attachments, 3);
+    g_buffer->generate_renderbuffer(platform->window()->width(), platform->window()->height());
+    g_buffer->check_status();
+
+    auto ssao_fbo = framebuffer("ssao_fbo");
+    register_resizable_framebuffer(ssao_fbo);
+    auto ssao_blur_fbo = framebuffer("ssao_blur_fbo");
+    register_resizable_framebuffer(ssao_blur_fbo);
+
+    ssao_fbo->generate_texture("color_buffer", GL_COLOR_ATTACHMENT0, platform->window()->width(), platform->window()->height(), GL_RED, GL_RED, GL_FLOAT, GL_NEAREST, GL_NEAREST, 0, 0);
+    ssao_fbo->check_status();
+
+    ssao_blur_fbo->generate_texture("color_buffer", GL_COLOR_ATTACHMENT0, platform->window()->width(), platform->window()->height(), GL_RED, GL_RED, GL_FLOAT, GL_NEAREST, GL_NEAREST, 0, 0);
+    ssao_blur_fbo->check_status();
+
+    std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
+    std::default_random_engine generator;
+
+    for (unsigned int i = 0; i < 64; ++i) {
+        glm::vec3 sample(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0, randomFloats(generator));
+        sample = glm::normalize(sample);
+        sample *= randomFloats(generator);
+        float scale = float(i) / 64.0f;
+        scale = 0.1f + (1.0f - 0.1f) * scale * scale;
+        sample *= scale;
+        m_ssao_kernel.push_back(sample);
+    }
+
+    for (unsigned int i = 0; i < 16; i++) {
+        glm::vec3 noise(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0, 0.0f);
+        m_ssao_noise.push_back(noise);
+    }
+    CHECKED_GL_CALL(glGenTextures, 1, &m_noise_texture);
+    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_noise_texture);
+    CHECKED_GL_CALL(glTexImage2D, GL_TEXTURE_2D, 0, GL_RGBA32F, 4, 4, 0, GL_RGB, GL_FLOAT, &m_ssao_noise[0]);
+    CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    CHECKED_GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
 void GraphicsController::terminate() {
@@ -49,12 +101,24 @@ void GraphicsController::terminate() {
     }
 }
 
+void GraphicsController::register_resizable_framebuffer(Framebuffer *fb) {
+    m_resize_framebuffer.push_back(fb);
+}
+
+const std::vector<Framebuffer *> &GraphicsController::get_resize_framebuffers() {
+    return m_resize_framebuffer;
+}
+
 void GraphicsPlatformEventObserver::on_window_resize(int width, int height) {
     m_graphics->perspective_params().Width = static_cast<float>(width);
     m_graphics->perspective_params().Height = static_cast<float>(height);
     m_graphics->orthographic_params().Right = static_cast<float>(width);
     m_graphics->orthographic_params().Top = static_cast<float>(height);
     CHECKED_GL_CALL(glViewport, 0, 0, width, height);
+    auto resources = engine::core::Controller::get<resources::ResourcesController>();
+    for (auto &fb: m_graphics->get_resize_framebuffers()) {
+        fb->resize(width, height);
+    }
 }
 
 std::string_view GraphicsController::name() const {
@@ -72,6 +136,51 @@ void GraphicsController::end_gui() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+void GraphicsController::draw_ssao(const resources::Shader *ssao_shader, const resources::Shader *blur_shader, const resources::Shader *light_shader) {
+    auto platform = engine::core::Controller::get<platform::PlatformController>();
+    auto g_buffer = framebuffer("g_buffer");
+    auto ssao_fbo = framebuffer("ssao_fbo");
+    ssao_fbo->bind();
+    engine::graphics::OpenGL::clear_buffers();
+    ssao_shader->use();
+    ssao_shader->set_int("gPosition", 0);
+    ssao_shader->set_int("gNormal", 1);
+    ssao_shader->set_int("texNoise", 2);
+    ssao_shader->set_float("width", platform->window()->width());
+    ssao_shader->set_float("height", platform->window()->height());
+    for (unsigned int i = 0; i < 64; ++i) {
+        ssao_shader->set_vec3("samples[" + std::to_string(i) + "]", m_ssao_kernel[i]);
+    }
+    ssao_shader->set_mat4("projection", projection_matrix());
+    g_buffer->bind_texture("g_position", GL_TEXTURE0);
+    g_buffer->bind_texture("g_normal", GL_TEXTURE1);
+    CHECKED_GL_CALL(glActiveTexture, GL_TEXTURE2);
+    CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_2D, m_noise_texture);
+    m_quad.draw();
+    ssao_fbo->unbind();
+
+    auto ssao_blur_fbo = framebuffer("ssao_blur_fbo");
+    ssao_blur_fbo->bind();
+    engine::graphics::OpenGL::clear_buffers();
+    blur_shader->use();
+    blur_shader->set_int("ssaoInput", 0);
+    ssao_fbo->bind_texture("color_buffer", GL_TEXTURE0);
+    m_quad.draw();
+    ssao_blur_fbo->unbind();
+
+    engine::graphics::OpenGL::clear_buffers();
+    light_shader->use();
+    light_shader->set_int("gPosition", 0);
+    light_shader->set_int("gNormal", 1);
+    light_shader->set_int("gAlbedo", 2);
+    light_shader->set_int("ssao", 3);
+    g_buffer->bind_texture("g_position", GL_TEXTURE0);
+    g_buffer->bind_texture("g_normal", GL_TEXTURE1);
+    g_buffer->bind_texture("g_albedo", GL_TEXTURE2);
+    ssao_blur_fbo->bind_texture("color_buffer", GL_TEXTURE3);
+    m_quad.draw();
+}
+
 void GraphicsController::draw_skybox(const resources::Shader *shader, const resources::Skybox *skybox) {
     glm::mat4 view = glm::mat4(glm::mat3(m_camera.view_matrix()));
     shader->use();
@@ -86,4 +195,14 @@ void GraphicsController::draw_skybox(const resources::Shader *shader, const reso
     CHECKED_GL_CALL(glDepthFunc, GL_LESS);// set depth function back to default
     CHECKED_GL_CALL(glBindTexture, GL_TEXTURE_CUBE_MAP, 0);
 }
+
+Framebuffer *GraphicsController::framebuffer(const std::string &name) {
+    auto &result = m_framebuffer[name];
+    if (!result) {
+        spdlog::info("load_framebuffer(name={})", name);
+        result = std::make_unique<Framebuffer>(Framebuffer());
+    }
+    return result.get();
+}
+
 }// namespace engine::graphics

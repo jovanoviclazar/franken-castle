@@ -1,0 +1,364 @@
+//
+// Created by cvnpko on 11/20/25.
+//
+#include <app/MainController.hpp>
+#include <engine/graphics/OpenGL.hpp>
+#include <random>
+
+namespace engine::main::app {
+void MainPlatformEventObserver::on_key(engine::platform::Key key) {
+    // spdlog::info("Keyboard event: key={}, state={}", key.name(), key.state_str());
+}
+
+void MainPlatformEventObserver::on_mouse_move(engine::platform::MousePosition position) {
+    // spdlog::info("MousePosition: {} {}", position.x, position.y);
+}
+
+void MainController::initialize() {
+    engine::graphics::OpenGL::enable_depth_testing();
+
+    auto graphics = engine::core::Controller::get<engine::graphics::GraphicsController>();
+    graphics->camera()->Position = {-45, 1, 0};
+    graphics->camera()->MovementSpeed *= 4.0f;
+
+    auto observer = std::make_unique<MainPlatformEventObserver>();
+    engine::core::Controller::get<engine::platform::PlatformController>()->register_platform_event_observer(
+            std::move(observer));
+
+    m_trees.push_back(get_model_matrix({{-35.0f, 0.0f, 40.0f}, {2.6f, 2.6f, 2.6f}}));
+    m_trees.push_back(get_model_matrix({{0.0f, 0.0f, 34.0f}, {3.0f, 3.0f, 3.0f}}));
+    m_trees.push_back(get_model_matrix({{-40.0f, 0.0f, -45.0f}, {2.2f, 2.2f, 2.2f}}));
+    m_trees.push_back(get_model_matrix({{-5.0f, 0.0f, -35.0f}, {2.8f, 2.8f, 2.8f}}));
+    m_trees.push_back(get_model_matrix({{15.0f, 0.0f, -40.0f}, {3.2f, 3.2f, 3.2f}}));
+    m_trees.push_back(get_model_matrix({{38.0f, 0.0f, -35.0f}, {3.20f, 3.20f, 3.20f}}));
+    m_trees.push_back(get_model_matrix({{38.0f, 0.0f, -10.0f}, {2.6f, 2.6f, 2.6f}}));
+    m_trees.push_back(get_model_matrix({{38.0f, 0.0f, 30.0f}, {3.8f, 3.8f, 3.8f}}));
+    m_trees.push_back(get_model_matrix({{36.0f, 0.0f, 8.0f}, {2.6f, 2.6f, 2.6f}}));
+    m_trees.push_back(get_model_matrix({{20.0f, 0.0f, 25.0f}, {2.8f, 2.8f, 2.8f}}));
+    m_trees.push_back(get_model_matrix({{15.0f, 0.0f, 40.0f}, {2.6f, 2.6f, 2.6f}}));
+
+    auto tree = engine::core::Controller::get<engine::resources::ResourcesController>()->model("pine_tree");
+    resources::Model::load_instancing(m_trees, tree->meshes());
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    {
+        std::uniform_real_distribution<float> distx(-49.9f, -18.1f);
+        std::uniform_real_distribution<float> disty(-0.01f, 0.01f);
+        std::uniform_real_distribution<float> distz(-49.9f, 49.9f);
+        std::uniform_real_distribution<float> dists(0.8f, 1.2f);
+        std::uniform_real_distribution<float> dista(0.0f, 360.0f);
+        glm::vec3 vec_n = {0.0f, 1.0f, 0.0f};
+        for (int i = 0; i < 400000; i++) {
+            ModelParams tmp{{distx(gen), disty(gen), distz(gen)},
+                            {dists(gen), dists(gen), dists(gen)}};
+            tmp.Rotate.emplace_back(vec_n, dista(gen));
+            m_grass.push_back(get_model_matrix(tmp));
+        }
+    }
+    {
+        std::uniform_real_distribution<float> distx(-11.9f, 49.9f);
+        std::uniform_real_distribution<float> disty(-0.01f, 0.01f);
+        std::uniform_real_distribution<float> distz(-49.9f, 49.9f);
+        std::uniform_real_distribution<float> dists(0.8f, 1.2f);
+        std::uniform_real_distribution<float> dista(0.0f, 360.0f);
+        glm::vec3 vec_n = {0.0f, 1.0f, 0.0f};
+        for (int i = 0; i < 600000; i++) {
+            ModelParams tmp{{distx(gen), disty(gen), distz(gen)},
+                            {dists(gen), dists(gen), dists(gen)}};
+            tmp.Rotate.emplace_back(vec_n, dista(gen));
+            m_grass.push_back(get_model_matrix(tmp));
+        }
+    }
+    auto grass = engine::core::Controller::get<engine::resources::ResourcesController>()->model("grass");
+    resources::Model::load_instancing(m_grass, grass->meshes());
+
+    m_plank.Rotate.emplace_back(glm::vec3(0.0f, 1.0f, 0.0f), 90.0f);
+
+    m_mystery_machine.Rotate.emplace_back(glm::vec3(0.0f, 1.0f, 0.0f), 180.0f);
+}
+
+bool MainController::loop() {
+    const auto platform = engine::core::Controller::get<engine::platform::PlatformController>();
+    if (platform->key(engine::platform::KeyId::KEY_ESCAPE)
+                .state() == engine::platform::Key::State::JustPressed) {
+        return false;
+    }
+    return true;
+}
+
+void MainController::poll_events() {
+    const auto platform = engine::core::Controller::get<engine::platform::PlatformController>();
+    if (platform->key(engine::platform::KEY_F1)
+                .state() == engine::platform::Key::State::JustPressed) {
+        m_cursor_enabled = !m_cursor_enabled;
+        platform->set_enable_cursor(m_cursor_enabled);
+    }
+    if (platform->key(engine::platform::KEY_B)
+                .state() == engine::platform::Key::State::JustPressed) {
+        m_bridge_opening++;
+    }
+    if (platform->key(engine::platform::KEY_F)
+                .state() == engine::platform::Key::State::JustPressed) {
+        m_spotlight_enabled = !m_spotlight_enabled;
+    }
+    if (platform->key(engine::platform::KEY_C).state() == engine::platform::Key::State::JustPressed) {
+        if (!m_alligator.InProcess) {
+            m_alligator.Start = true;
+            m_alligator.InProcess = true;
+        }
+    }
+}
+
+void MainController::update() {
+    update_camera();
+    auto platform = engine::core::Controller::get<engine::platform::PlatformController>();
+    float dt = platform->dt();
+    if (m_bridge_opening > 0) {
+
+        if (m_bridge_opened) {
+            m_bridge_radius -= dt * 20;
+            if (m_bridge_radius < 0.0f) {
+                m_bridge_radius = 0.0f;
+                m_bridge_opening--;
+                m_bridge_opened = false;
+            }
+        } else {
+            m_bridge_radius += dt * 20;
+            if (m_bridge_radius > 90.0f) {
+                m_bridge_radius = 90.0f;
+                m_bridge_opening--;
+                m_bridge_opened = true;
+            }
+        }
+        // spdlog::info("Bridge radius: {}", m_bridge_radius);
+        // spdlog::info("Bridge opening: {}", m_bridge_opening);
+    }
+    if (m_alligator.InProcess) {
+        if (m_alligator.Start) {
+            m_alligator.CurrPos -= glm::vec3(0.0f, 0.0f, 1.0f) * dt * 20.0f;
+            if (m_alligator.EndPos[2] >= m_alligator.CurrPos[2]) {
+                m_alligator.Start = false;
+                m_alligator.FirstTurn = true;
+            }
+        } else if (m_alligator.FirstTurn) {
+            m_alligator.Angle += dt * 200.0f;
+            if (m_alligator.Angle > 180.0f) {
+                m_alligator.FirstTurn = false;
+                m_alligator.End = true;
+            }
+        } else if (m_alligator.End) {
+            m_alligator.CurrPos += glm::vec3(0.0f, 0.0f, 1.0f) * dt * 20.0f;
+            if (m_alligator.StartPos[2] <= m_alligator.CurrPos[2]) {
+                m_alligator.End = false;
+                m_alligator.SecondTurn = true;
+            }
+        } else {
+            m_alligator.Angle -= dt * 200.0f;
+            if (m_alligator.Angle <= 0.0f) {
+                m_alligator.SecondTurn = false;
+                m_alligator.InProcess = false;
+            }
+        }
+    }
+}
+
+void MainController::update_camera() {
+    auto platform = engine::core::Controller::get<engine::platform::PlatformController>();
+    auto camera = engine::core::Controller::get<engine::graphics::GraphicsController>()->camera();
+    float dt = platform->dt();
+    if (platform->key(engine::platform::KEY_W)
+                .state() == engine::platform::Key::State::Pressed) {
+        camera->move_camera(engine::graphics::Camera::Movement::FORWARD, dt);
+    }
+    if (platform->key(engine::platform::KEY_S)
+                .state() == engine::platform::Key::State::Pressed) {
+        camera->move_camera(engine::graphics::Camera::Movement::BACKWARD, dt);
+    }
+    if (platform->key(engine::platform::KEY_A)
+                .state() == engine::platform::Key::State::Pressed) {
+        camera->move_camera(engine::graphics::Camera::Movement::LEFT, dt);
+    }
+    if (platform->key(engine::platform::KEY_D)
+                .state() == engine::platform::Key::State::Pressed) {
+        camera->move_camera(engine::graphics::Camera::Movement::RIGHT, dt);
+    }
+    auto mouse = platform->mouse();
+    camera->rotate_camera(mouse.dx, mouse.dy);
+    camera->zoom(mouse.scroll);
+}
+
+void MainController::begin_draw() {
+    engine::graphics::OpenGL::clear_buffers();
+}
+
+void MainController::draw() {
+    auto g_buffer = engine::core::Controller::get<engine::graphics::GraphicsController>()->framebuffer("g_buffer");
+    g_buffer->bind();
+    engine::graphics::OpenGL::clear_buffers();
+    // draw_skybox();
+    draw_floor();
+    draw_water();
+    draw_alligator();
+    draw_grass();
+    draw_tree();
+    draw_castle();
+    draw_plank();
+    draw_bridge();
+    draw_mystery_machine();
+    g_buffer->unbind();
+    draw_ssao();
+}
+
+void MainController::end_draw() {
+    engine::core::Controller::get<engine::platform::PlatformController>()->swap_buffers();
+}
+
+void MainController::draw_skybox() {
+    auto shader = engine::core::Controller::get<engine::resources::ResourcesController>()->shader("skybox");
+    auto skybox_cube = engine::core::Controller::get<engine::resources::ResourcesController>()->skybox("skybox");
+    engine::core::Controller::get<engine::graphics::GraphicsController>()->draw_skybox(shader, skybox_cube);
+}
+
+void MainController::draw_floor() {
+    auto graphics = engine::core::Controller::get<engine::graphics::GraphicsController>();
+    auto shader = engine::core::Controller::get<engine::resources::ResourcesController>()->shader("basic");
+    auto floor = engine::core::Controller::get<engine::resources::ResourcesController>()->model("floor");
+    shader->use();
+    shader->set_mat4("projection", graphics->projection_matrix());
+    shader->set_mat4("view", graphics->camera()->view_matrix());
+    shader->set_mat4("model", get_model_matrix(m_floor));
+    floor->draw(shader);
+}
+
+void MainController::draw_water() {
+    auto graphics = engine::core::Controller::get<engine::graphics::GraphicsController>();
+    auto shader = engine::core::Controller::get<engine::resources::ResourcesController>()->shader("basic");
+    auto platform = engine::core::Controller::get<engine::platform::PlatformController>();
+    auto water = engine::core::Controller::get<engine::resources::ResourcesController>()->model("water");
+    shader->use();
+    shader->set_mat4("projection", graphics->projection_matrix());
+    shader->set_mat4("view", graphics->camera()->view_matrix());
+    shader->set_mat4("model", get_model_matrix(m_water));
+    water->draw(shader);
+}
+
+void MainController::draw_alligator() {
+    auto graphics = engine::core::Controller::get<engine::graphics::GraphicsController>();
+    auto shader = engine::core::Controller::get<engine::resources::ResourcesController>()->shader("basic");
+    auto platform = engine::core::Controller::get<engine::platform::PlatformController>();
+    auto alligator = engine::core::Controller::get<engine::resources::ResourcesController>()->model("alligator");
+    shader->use();
+    shader->set_mat4("projection", graphics->projection_matrix());
+    shader->set_mat4("view", graphics->camera()->view_matrix());
+    shader->set_mat4("model", get_model_matrix(m_alligator.Scale, {0.0f, 1.0f, 0.0f}, m_alligator.Angle, m_alligator.CurrPos));
+    alligator->draw(shader);
+}
+
+void MainController::draw_grass() {
+    auto graphics = engine::core::Controller::get<engine::graphics::GraphicsController>();
+    auto shader = engine::core::Controller::get<engine::resources::ResourcesController>()->shader("instancing");
+    auto grass = engine::core::Controller::get<engine::resources::ResourcesController>()->model("grass");
+    shader->use();
+    shader->set_mat4("projection", graphics->projection_matrix());
+    shader->set_mat4("view", graphics->camera()->view_matrix());
+    grass->draw_instancing(shader, m_grass.size());
+}
+
+void MainController::draw_tree() {
+    auto graphics = engine::core::Controller::get<engine::graphics::GraphicsController>();
+    auto shader = engine::core::Controller::get<engine::resources::ResourcesController>()->shader("instancing");
+    auto pine_tree = engine::core::Controller::get<engine::resources::ResourcesController>()->model("pine_tree");
+    shader->use();
+    shader->set_mat4("projection", graphics->projection_matrix());
+    shader->set_mat4("view", graphics->camera()->view_matrix());
+    pine_tree->draw_instancing(shader, m_trees.size());
+}
+
+void MainController::draw_castle() {
+    auto graphics = engine::core::Controller::get<engine::graphics::GraphicsController>();
+    auto shader = engine::core::Controller::get<engine::resources::ResourcesController>()->shader("basic");
+    auto castle = engine::core::Controller::get<engine::resources::ResourcesController>()->model("castle");
+    shader->use();
+    shader->set_mat4("projection", graphics->projection_matrix());
+    shader->set_mat4("view", graphics->camera()->view_matrix());
+    shader->set_mat4("model", get_model_matrix(m_castle));
+    castle->draw(shader);
+}
+
+void MainController::draw_plank() {
+    auto graphics = engine::core::Controller::get<engine::graphics::GraphicsController>();
+    auto shader = engine::core::Controller::get<engine::resources::ResourcesController>()->shader("basic");
+    auto plank = engine::core::Controller::get<engine::resources::ResourcesController>()->model("plank");
+    shader->use();
+    shader->set_mat4("projection", graphics->projection_matrix());
+    shader->set_mat4("view", graphics->camera()->view_matrix());
+    shader->set_mat4("model", get_model_matrix(m_plank));
+    plank->draw(shader);
+}
+
+void MainController::draw_bridge() {
+    auto graphics = engine::core::Controller::get<engine::graphics::GraphicsController>();
+    auto shader = engine::core::Controller::get<engine::resources::ResourcesController>()->shader("basic");
+    auto bridge = engine::core::Controller::get<engine::resources::ResourcesController>()->model("bridge");
+    shader->use();
+    shader->set_mat4("projection", graphics->projection_matrix());
+    shader->set_mat4("view", graphics->camera()->view_matrix());
+    shader->set_mat4("model", rotate(get_model_matrix(m_bridge), glm::radians(m_bridge_radius), m_bridge_vec));
+    bridge->draw(shader);
+}
+
+void MainController::draw_mystery_machine() {
+    auto graphics = engine::core::Controller::get<engine::graphics::GraphicsController>();
+    auto shader = engine::core::Controller::get<engine::resources::ResourcesController>()->shader("basic");
+    auto mystery_machine = engine::core::Controller::get<engine::resources::ResourcesController>()->model("mystery_machine");
+    shader->use();
+    shader->set_mat4("projection", graphics->projection_matrix());
+    shader->set_mat4("view", graphics->camera()->view_matrix());
+    shader->set_mat4("model", get_model_matrix(m_mystery_machine));
+    mystery_machine->draw(shader);
+}
+
+void MainController::draw_ssao() {
+    auto ssao_shader = engine::core::Controller::get<engine::resources::ResourcesController>()->shader("ssao");
+    auto blur_shader = engine::core::Controller::get<engine::resources::ResourcesController>()->shader("ssao_blur");
+    auto light_shader = engine::core::Controller::get<engine::resources::ResourcesController>()->shader("ssao_light");
+    light_shader->use();
+    set_light(light_shader);
+    engine::core::Controller::get<engine::graphics::GraphicsController>()->draw_ssao(ssao_shader, blur_shader, light_shader);
+}
+
+void MainController::set_light(const resources::Shader *shader) const {
+    auto graphics = engine::core::Controller::get<engine::graphics::GraphicsController>();
+    shader->set_vec3("dirLight.direction", glm::vec3(1.0f, -1.0f, 1.0f));
+    shader->set_vec3("dirLight.ambient", glm::vec3(0.1f, 0.1f, 0.1f));
+    shader->set_vec3("dirLight.diffuse", glm::vec3(0.4f, 0.4f, 0.4f));
+    shader->set_vec3("dirLight.specular", glm::vec3(0.5f, 0.5f, 0.5f));
+    shader->set_vec3("spotLight.position", graphics->camera()->Position);
+    shader->set_vec3("spotLight.direction", graphics->camera()->Front);
+    shader->set_vec3("spotLight.ambient", glm::vec3(0.0f, 0.0f, 0.0f));
+    shader->set_vec3("spotLight.diffuse", m_spotlight_enabled ? glm::vec3(1.0f, 1.0f, 1.0f) : glm::vec3(0.0f, 0.0f, 0.0f));
+    shader->set_vec3("spotLight.specular", m_spotlight_enabled ? glm::vec3(1.0f, 1.0f, 1.0f) : glm::vec3(0.0f, 0.0f, 0.0f));
+    shader->set_float("spotLight.constant", 1.0f);
+    shader->set_float("spotLight.linear", 0.09f);
+    shader->set_float("spotLight.quadratic", 0.032f);
+    shader->set_float("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
+    shader->set_float("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
+}
+
+glm::mat4 MainController::get_model_matrix(ModelParams par) {
+    glm::mat4 ret = translate(glm::mat4(1.0f), par.Position);
+    for (auto &r: par.Rotate) {
+        ret = rotate(ret, glm::radians(r.second), r.first);
+    }
+    ret = scale(ret, par.Scale);
+    return ret;
+}
+
+glm::mat4 MainController::get_model_matrix(glm::vec3 scl, glm::vec3 rot_vec, float rot_ang, glm::vec3 pos) {
+    glm::mat4 ret = translate(glm::mat4(1.0f), pos);
+    ret = rotate(ret, glm::radians(rot_ang), rot_vec);
+    ret = scale(ret, scl);
+    return ret;
+}
+}// namespace engine::main::app

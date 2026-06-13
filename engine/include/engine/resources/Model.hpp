@@ -24,6 +24,7 @@ public:
     * @param shader The shader to use for drawing.
     */
     void draw(const Shader *shader);
+    void draw_instancing(const Shader *shader, uint32_t amount);
 
     /**
     * @brief Destroys the model in the OpenGL context.
@@ -53,6 +54,8 @@ public:
     const std::string &name() const {
         return m_name;
     }
+
+    static void load_instancing(const std::vector<glm::mat4> &data, const std::vector<resources::Mesh> &meshes);
 
 private:
     /**
